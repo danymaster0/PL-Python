@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simplex PL - Calculadora de Programación Lineal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {} }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --sidebar-bg: #0f172a;
+            --primary-blue: #1e40af;
+            --primary-blue-hover: #1e3a8a;
+        }
+        .dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --sidebar-bg: #020617;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+        .sidebar {
+            width: 260px;
+            min-height: 100vh;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: linear-gradient(180deg, #0a0a1e 0%, #0f172a 50%, #1e3a5f 100%);
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 16px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 40px 70px, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 50px 160px, rgba(255,255,255,0.3), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.3), transparent),
+                radial-gradient(1.5px 1.5px at 180px 50px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 200px 150px, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 70px 200px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 110px 250px, rgba(255,255,255,0.3), transparent),
+                radial-gradient(1.5px 1.5px at 30px 280px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 150px 300px, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 80px 350px, rgba(255,255,255,0.3), transparent),
+                radial-gradient(1px 1px at 200px 400px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 40px 450px, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1.5px 1.5px at 170px 500px, rgba(255,255,255,0.6), transparent);
+            background-repeat: repeat;
+            background-size: 220px 550px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .sidebar > * { position: relative; z-index: 1; }
+        .sidebar.collapsed {
+            width: auto;
+            background: transparent;
+            padding: 16px;
+        }
+        .sidebar.collapsed::before { display: none; }
+        .sidebar.collapsed .sidebar-header-text { display: none; }
+        .sidebar.collapsed nav { display: none; }
+        .main-logo {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .main-logo:hover { transform: scale(1.1); }
+        .sidebar.collapsed .main-logo { margin: 0; }
+        .sidebar.collapsed .main-logo .logo-box {
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5);
+        }
+        .logo-box {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white; 
+        }
+        .btn-primary:hover { 
+            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+        }
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover { background: var(--border-color); }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        th { background: var(--bg-secondary); font-weight: 600; }
+        .status-optimal {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            border-left: 4px solid #22c55e;
+        }
+        .dark .status-optimal { background: linear-gradient(135deg, #14532d, #166534); }
+        .status-error {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border-left: 4px solid #ef4444;
+        }
+        .dark .status-error { background: linear-gradient(135deg, #450a0a, #7f1d1d); }
+        canvas {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            cursor: pointer;
+            max-width: 100%;
+            height: auto;
+        }
+        .tooltip {
+            position: absolute;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-width: 280px;
+            line-height: 1.6;
+            white-space: nowrap;
+        }
+        .dark .tooltip { background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); color: #1e293b; }
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px 8px 0;
+            border-style: solid;
+            border-color: #1e293b transparent transparent;
+        }
+        .dark .tooltip::after { border-color: #f1f5f9 transparent transparent; }
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #cbd5e1;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .dark .toggle-switch { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); }
+        .toggle-switch::after {
+            content: '☀️';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        .dark .toggle-switch::after {
+            transform: translateX(24px);
+            content: '🌙';
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, #000000 0%, #0a0a1e 30%, #0f172a 60%, #1e3a5f 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            color: white;
+            font-size: 18px;
+            overflow: hidden;
+        }
+        .stars {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1.5px 1.5px at 25% 15%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 40% 30%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(2px 2px at 55% 10%, rgba(255,255,255,0.7), transparent),
+                radial-gradient(1px 1px at 70% 25%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1.5px 1.5px at 85% 20%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 15% 45%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 30% 55%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(2px 2px at 45% 50%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 60% 60%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1.5px 1.5px at 75% 45%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 5% 70%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1.5px 1.5px at 20% 75%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 35% 80%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 50% 70%, rgba(255,255,255,0.7), transparent),
+                radial-gradient(1px 1px at 65% 85%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 80% 75%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1.5px 1.5px at 95% 80%, rgba(255,255,255,0.6), transparent);
+            background-repeat: repeat;
+            background-size: 100% 100%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .mountains {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 35%;
+            z-index: 1;
+        }
+        .mountains svg {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%;
+        }
+        .loading-spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #3b82f6;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+        }
+        .point-info-panel {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+        }
+        .point-info-panel.optimal {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+        }
+        .nav-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .nav-disabled:hover { background: transparent; }
+        .coming-soon {
+            font-size: 9px;
+            background: #f59e0b;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: auto;
+        }
+        .page { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #page-dashboard {
+            position: relative;
+            min-height: calc(100vh - 150px);
+        }
+        .dashboard-bg {
+            position: fixed;
+            top: 0; left: 70px; right: 0; bottom: 0;
+            z-index: -1;
+            overflow: hidden;
+            background: linear-gradient(180deg, #000000 0%, #0a0a1e 20%, #0f172a 50%, #1e293b 100%);
+        }
+        .dark .dashboard-bg {
+            background: linear-gradient(180deg, #000000 0%, #0a0a1e 20%, #0f172a 50%, #1e293b 100%);
+        }
+        .dashboard-bg::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                radial-gradient(1px 1px at 5% 10%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1.5px 1.5px at 15% 5%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 25% 15%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 35% 8%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 45% 20%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1.5px 1.5px at 55% 12%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 65% 6%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 75% 18%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(2px 2px at 85% 10%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 95% 15%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 10% 35%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1.5px 1.5px at 30% 40%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 50% 35%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 70% 42%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(2px 2px at 90% 38%, rgba(255,255,255,0.5), transparent);
+            background-repeat: repeat;
+            background-size: 100% 50%;
+            animation: twinkle 4s ease-in-out infinite;
+        }
+        .dashboard-mountains {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 40%;
+            pointer-events: none;
+        }
+        @media (max-width: 1024px) {
+            .sidebar {
+                position: fixed;
+                left: 0; top: 0;
+                z-index: 100;
+                min-height: 100vh;
+            }
+            .sidebar.collapsed { position: relative; }
+            .main-content { width: 100%; }
+            .dashboard-bg { left: 0; }
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                max-width: 260px;
+                transform: translateX(-100%);
+            }
+            .sidebar:not(.collapsed) { transform: translateX(0); }
+            .sidebar.collapsed {
+                width: auto;
+                transform: translateX(0);
+                position: fixed;
+                left: 0; top: 0;
+            }
+            .grid-responsive { grid-template-columns: 1fr !important; }
+            .card { padding: 15px; }
+            h1 { font-size: 1.5rem !important; }
+        }
+        @media (max-width: 480px) {
+            .btn { padding: 8px 16px; font-size: 14px; }
+            .card { padding: 12px; }
+            .toggle-switch { width: 44px; height: 24px; }
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+        }
+        @media (max-width: 768px) {
+            .sidebar:not(.collapsed) + .sidebar-overlay { display: block; }
+        }
+        .card-glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        .card-glass:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+        .card-glass .text-secondary { color: rgba(148, 163, 184, 0.9); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="stars"></div>
+        <div class="mountains">
+            <svg viewBox="0 0 1440 320" preserveAspectRatio="none">
+                <path fill="#0a0a1e" fill-opacity="0.6" d="M0,260 L120,180 L200,220 L320,120 L420,200 L540,90 L660,190 L780,100 L900,180 L1020,80 L1140,170 L1260,110 L1380,160 L1440,200 L1440,320 L0,320 Z"></path>
+                <path fill="#0f172a" fill-opacity="0.8" d="M0,280 L100,220 L180,260 L300,160 L400,230 L520,130 L640,210 L760,140 L880,200 L1000,120 L1120,180 L1240,140 L1360,180 L1440,220 L1440,320 L0,320 Z"></path>
+                <path fill="#1e293b" d="M0,300 L80,260 L160,290 L280,210 L380,270 L500,190 L620,250 L740,200 L860,250 L980,190 L1100,240 L1220,210 L1340,250 L1440,280 L1440,320 L0,320 Z"></path>
+            </svg>
+        </div>
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <span>Cargando Python (Pyodide)...</span>
+        </div>
+    </div>
+
+    <div class="flex min-h-screen">
+        <div id="sidebar" class="sidebar text-white flex flex-col">
+            <div class="main-logo flex items-center gap-3 mb-8 p-2" onclick="toggleSidebar()">
+                <div class="logo-box w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-xl">⚡</span>
+                </div>
+                <div class="sidebar-header-text whitespace-nowrap">
+                    <div class="font-bold">Simplex PL</div>
+                    <div class="text-xs text-blue-300">Python + HTML</div>
+                </div>
+            </div>
+            
+            <nav class="space-y-2 flex-1">
+                <button onclick="showPage('dashboard')" class="w-full text-left p-3 rounded-lg hover:bg-white/10 flex items-center gap-3" id="nav-dashboard">
+                    <span class="text-xl flex-shrink-0">📊</span>
+                    <span class="sidebar-text whitespace-nowrap">Dashboard</span>
+                </button>
+                <button onclick="showPage('graphical')" class="w-full text-left p-3 rounded-lg hover:bg-white/10 flex items-center gap-3" id="nav-graphical">
+                    <span class="text-xl flex-shrink-0">📈</span>
+                    <span class="sidebar-text whitespace-nowrap">Método Gráfico</span>
+                </button>
+                <button onclick="showPage('simplex')" class="w-full text-left p-3 rounded-lg hover:bg-white/10 flex items-center gap-3" id="nav-simplex">
+                    <span class="text-xl flex-shrink-0">🧮</span>
+                    <span class="sidebar-text whitespace-nowrap">Método Simplex</span>
+                </button>
+                <div class="border-t border-white/20 my-3"></div>
+                <button class="w-full text-left p-3 rounded-lg nav-disabled flex items-center gap-3" disabled>
+                    <span class="text-xl flex-shrink-0">🔢</span>
+                    <span class="sidebar-text whitespace-nowrap">Gran M</span>
+                    <span class="coming-soon">Próximamente</span>
+                </button>
+                <button class="w-full text-left p-3 rounded-lg nav-disabled flex items-center gap-3" disabled>
+                    <span class="text-xl flex-shrink-0">📋</span>
+                    <span class="sidebar-text whitespace-nowrap">Dos Fases</span>
+                    <span class="coming-soon">Próximamente</span>
+                </button>
+                <div class="border-t border-white/20 my-3"></div>
+                <button onclick="showPage('about')" class="w-full text-left p-3 rounded-lg hover:bg-white/10 flex items-center gap-3" id="nav-about">
+                    <span class="text-xl flex-shrink-0">ℹ️</span>
+                    <span class="sidebar-text whitespace-nowrap">Acerca de</span>
+                </button>
+            </nav>
+        </div>
+        
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+        <div class="flex-1 p-4 md:p-6 overflow-auto main-content">
+            <div class="flex justify-between items-center mb-6">
+                <div></div>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm">☀️</span>
+                    <div class="toggle-switch" onclick="toggleTheme()"></div>
+                    <span class="text-sm">🌙</span>
+                </div>
+            </div>
+
+            <div id="page-dashboard" class="page">
+                <h1 class="text-2xl md:text-3xl font-bold mb-2 text-white">Bienvenido a Simplex PL</h1>
+                <p class="mb-6 md:mb-8 text-blue-200">Calculadora en Python para programación lineal - Haz clic en ⚡ para colapsar el menú</p>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 md:mb-8">
+                    <div class="card-glass">
+                        <div class="text-sm text-secondary">Variables</div>
+                        <div class="text-2xl font-bold">n variables</div>
+                    </div>
+                    <div class="card-glass">
+                        <div class="text-sm text-secondary">Restricciones</div>
+                        <div class="text-2xl font-bold">m restricciones</div>
+                    </div>
+                    <div class="card-glass">
+                        <div class="text-sm text-secondary">Tipo</div>
+                        <div class="text-2xl font-bold">Max / Min</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="card-glass cursor-pointer hover:border-blue-400" onclick="showPage('graphical')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-2xl">📈</span>
+                            <h3 class="font-bold text-lg">Método Gráfico</h3>
+                        </div>
+                        <p class="text-secondary">2 variables con gráfico interactivo.</p>
+                    </div>
+                    <div class="card-glass cursor-pointer hover:border-blue-400" onclick="showPage('simplex')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-2xl">🧮</span>
+                            <h3 class="font-bold text-lg">Método Simplex</h3>
+                        </div>
+                        <p class="text-secondary">Múltiples variables con tabla simplex.</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="card-glass opacity-50" style="border-style: dashed;">
+                        <div class="flex items-center gap-3 mb-2 flex-wrap">
+                            <span class="text-2xl">🔢</span>
+                            <h3 class="font-bold text-lg">Gran M</h3>
+                            <span class="coming-soon">Próximamente</span>
+                        </div>
+                        <p class="text-secondary">Restricciones = o ≥.</p>
+                    </div>
+                    <div class="card-glass opacity-50" style="border-style: dashed;">
+                        <div class="flex items-center gap-3 mb-2 flex-wrap">
+                            <span class="text-2xl">📋</span>
+                            <h3 class="font-bold text-lg">Dos Fases</h3>
+                            <span class="coming-soon">Próximamente</span>
+                        </div>
+                        <p class="text-secondary">Alternativa sin penalizaciones.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-graphical" class="page hidden">
+                <h1 class="text-2xl md:text-3xl font-bold mb-2">Método Gráfico</h1>
+                <p class="mb-6" style="color: var(--text-secondary)">2 variables - Haz clic en los puntos para ver información</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 grid-responsive">
+                    <div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Tipo de Problema</label>
+                            <select id="graph-type">
+                                <option value="max">Maximizar</option>
+                                <option value="min">Minimizar</option>
+                            </select>
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Función Objetivo</label>
+                            <input type="text" id="graph-objective" value="3x + 5y" placeholder="Ej: 3x + 5y">
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Restricciones (separar por ;)</label>
+                            <textarea id="graph-constraints" rows="4">2x + 1y <= 18; 2x + 3y <= 42; 3x + 1y <= 24</textarea>
+                        </div>
+                        <button onclick="solveGraphical()" class="btn btn-primary w-full">▶ Resolver con Python</button>
+                        <div class="mt-4">
+                            <h4 class="font-medium mb-2">Ejemplos:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="loadGraphicalExample(0)" class="btn btn-secondary text-sm">x, y</button>
+                                <button onclick="loadGraphicalExample(1)" class="btn btn-secondary text-sm">a, b</button>
+                                <button onclick="loadGraphicalExample(2)" class="btn btn-secondary text-sm">Min</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="card">
+                            <h3 class="font-bold mb-2">Gráfico Interactivo</h3>
+                            <p class="text-sm mb-2" style="color: var(--text-secondary)">👆 Haz clic en cualquier punto</p>
+                            <div class="relative" id="canvas-container" style="width: 100%; max-width: 500px;">
+                                <canvas id="graph-canvas" width="500" height="400"></canvas>
+                                <div id="graph-tooltip" class="tooltip hidden"></div>
+                            </div>
+                            <div id="point-info" class="point-info-panel hidden">
+                                <div id="point-info-content"></div>
+                            </div>
+                        </div>
+                        <div id="graph-result" class="card hidden">
+                            <h3 class="font-bold mb-2">Resultados</h3>
+                            <div id="graph-solution"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-simplex" class="page hidden">
+                <h1 class="text-2xl md:text-3xl font-bold mb-2">Método Simplex</h1>
+                <p class="mb-6" style="color: var(--text-secondary)">Múltiples variables</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 grid-responsive">
+                    <div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Tipo de Problema</label>
+                            <select id="simplex-type">
+                                <option value="max">Maximizar</option>
+                                <option value="min">Minimizar</option>
+                            </select>
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Función Objetivo</label>
+                            <input type="text" id="simplex-objective" value="4a + 3b" placeholder="Ej: 4a + 3b">
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Restricciones (una por línea)</label>
+                            <textarea id="simplex-constraints" rows="4">2a + b <= 8
+a + 2b <= 8</textarea>
+                        </div>
+                        <button onclick="solveSimplex()" class="btn btn-primary w-full">▶ Resolver con Python</button>
+                        <div class="mt-4">
+                            <h4 class="font-medium mb-2">Ejemplos:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="loadSimplexExample(0)" class="btn btn-secondary text-sm">Básico</button>
+                                <button onclick="loadSimplexExample(1)" class="btn btn-secondary text-sm">Prod</button>
+                                <button onclick="loadSimplexExample(2)" class="btn btn-secondary text-sm">Min</button>
+                                <button onclick="loadSimplexExample(3)" class="btn btn-secondary text-sm">3 Var</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div id="simplex-result" class="card hidden">
+                            <h3 class="font-bold mb-2">Resultados</h3>
+                            <div id="simplex-solution"></div>
+                        </div>
+                        <div id="simplex-table-container" class="card hidden">
+                            <h3 class="font-bold mb-2">Tabla Simplex</h3>
+                            <div id="simplex-table" class="overflow-x-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-about" class="page hidden">
+                <h1 class="text-2xl md:text-3xl font-bold mb-2">Acerca de</h1>
+                <p class="mb-6" style="color: var(--text-secondary)">Información del proyecto</p>
+
+                <div class="card">
+                    <h3 class="font-bold mb-2">Simplex PL - Python + HTML</h3>
+                    <p class="mb-4" style="color: var(--text-secondary)">Calculadora de programación lineal con Python (Pyodide).</p>
+                    <ul class="list-disc list-inside space-y-1" style="color: var(--text-secondary)">
+                        <li>Haz clic en ⚡ para colapsar/expandir el menú</li>
+                        <li>Haz clic en los puntos del gráfico para ver información</li>
+                        <li>Variables con cualquier nombre (a, b, x, y, etc.)</li>
+                        <li>Modo claro/oscuro</li>
+                        <li>Diseño responsive</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="font-bold mb-2">¿Por qué "Problema no acotado"?</h3>
+                    <p style="color: var(--text-secondary)">Ocurre cuando no hay límites superiores para las variables. Las restricciones de no negatividad se asumen automáticamente.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-bg" id="dashboard-bg">
+        <div class="dashboard-mountains">
+            <svg viewBox="0 0 1440 400" preserveAspectRatio="none" style="width: 100%; height: 100%;">
+                <path fill="#0f172a" fill-opacity="0.5" d="M0,350 L80,280 L160,320 L280,220 L400,300 L520,180 L640,260 L760,160 L880,240 L1000,140 L1120,220 L1260,170 L1380,230 L1440,280 L1440,400 L0,400 Z"></path>
+                <path fill="#1e293b" fill-opacity="0.6" d="M0,360 L100,300 L200,340 L320,260 L440,320 L560,220 L680,290 L800,210 L920,280 L1040,190 L1160,260 L1300,220 L1440,300 L1440,400 L0,400 Z"></path>
+                <path fill="#1e3a5f" fill-opacity="0.4" d="M0,380 L120,330 L240,360 L360,300 L480,350 L600,280 L720,340 L840,290 L960,340 L1080,280 L1200,330 L1320,310 L1440,350 L1440,400 L0,400 Z"></path>
+                <path fill="#0f172a" d="M0,390 L90,360 L180,380 L300,340 L420,370 L540,330 L660,365 L780,340 L900,360 L1020,335 L1140,360 L1260,345 L1380,365 L1440,380 L1440,400 L0,400 Z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        let pyodide = null;
+        let graphPoints = [];
+        let optimalPoint = null;
+        let variables = ['x', 'y'];
+        let currentGraphData = null;
+
+        async function initPyodide() {
+            try {
+                pyodide = await loadPyodide();
+                await pyodide.loadPackage(['numpy']);
+                
+                await pyodide.runPythonAsync(`
+import numpy as np
+import re
+import json
+
+def parsear_funcion_objetivo(fo_str, variables):
+    fo_str = fo_str.replace(' ', '').replace('*', '').lower()
+    coef = [0.0] * len(variables)
+    for i, v in enumerate(variables):
+        pattern = r'([+-]?\\d*\\.?\\d*)' + re.escape(v) + r'(?![a-z\\d])'
+        matches = re.findall(pattern, fo_str, re.IGNORECASE)
+        for c in matches:
+            coef[i] += float(c if c not in ('', '+', '-') else {'': 1, '+': 1, '-': -1}[c])
+    return coef
+
+def parsear_restriccion(restr, variables):
+    restr = restr.replace(' ', '').replace('*', '').lower()
+    m = re.match(r'(.+?)(<=|>=|≤|≥|=)(.+)', restr)
+    if not m: return None
+    lhs, signo, rhs = m.groups()
+    coef = [0.0] * len(variables)
+    for i, v in enumerate(variables):
+        pattern = r'([+-]?\\d*\\.?\\d*)' + re.escape(v) + r'(?![a-z\\d])'
+        matches = re.findall(pattern, lhs, re.IGNORECASE)
+        for c in matches:
+            coef[i] += float(c if c not in ('', '+', '-') else {'': 1, '+': 1, '-': -1}[c])
+    return {'coef': coef, 'op': signo.replace('≤', '<=').replace('≥', '>='), 'rhs': float(rhs)}
+
+def resolver_grafico(tipo, func_obj, restr_str):
+    all_vars = list(dict.fromkeys(re.findall(r'([a-z]\\d*)', (func_obj + ' ' + restr_str).lower(), re.IGNORECASE)))
+    if len(all_vars) != 2: return {'error': f'Se detectaron {len(all_vars)} variables. Se requieren exactamente 2.'}
+    obj_coef = parsear_funcion_objetivo(func_obj, all_vars)
+    restricciones = [parsear_restriccion(r.strip(), all_vars) for r in restr_str.split(';') if r.strip()]
+    restricciones = [r for r in restricciones if r]
+    if not restricciones: return {'error': 'No hay restricciones válidas.'}
+    
+    puntos = [{'x': 0, 'y': 0}]
+    for i, r in enumerate(restricciones):
+        a1, a2, rhs = r['coef'][0], r['coef'][1], r['rhs']
+        if abs(a1) > 1e-10: puntos.append({'x': rhs/a1, 'y': 0})
+        if abs(a2) > 1e-10: puntos.append({'x': 0, 'y': rhs/a2})
+        for j in range(i+1, len(restricciones)):
+            r2 = restricciones[j]
+            det = a1 * r2['coef'][1] - a2 * r2['coef'][0]
+            if abs(det) > 1e-10:
+                puntos.append({'x': (rhs * r2['coef'][1] - a2 * r2['rhs']) / det, 'y': (a1 * r2['rhs'] - rhs * r2['coef'][0]) / det})
+    
+    factibles = []
+    for p in puntos:
+        if p['x'] < -1e-6 or p['y'] < -1e-6: continue
+        cumple = all((r['op'] == '<=' and r['coef'][0]*p['x']+r['coef'][1]*p['y'] <= r['rhs']+1e-6) or (r['op'] == '>=' and r['coef'][0]*p['x']+r['coef'][1]*p['y'] >= r['rhs']-1e-6) or (r['op'] == '=' and abs(r['coef'][0]*p['x']+r['coef'][1]*p['y']-r['rhs']) < 1e-6) for r in restricciones)
+        if cumple: factibles.append(p)
+    
+    if not factibles: return {'error': 'No existe región factible.'}
+    
+    unicos = []
+    for p in factibles:
+        if not any(abs(u['x']-p['x'])<1e-6 and abs(u['y']-p['y'])<1e-6 for u in unicos):
+            p['z'] = obj_coef[0]*p['x'] + obj_coef[1]*p['y']
+            unicos.append(p)
+    
+    optimo = max(unicos, key=lambda p: p['z']) if tipo == 'max' else min(unicos, key=lambda p: p['z'])
+    return {'variables': all_vars, 'objetivo': obj_coef, 'restricciones': restricciones, 'puntos': unicos, 'optimo': optimo, 'tipo': tipo}
+
+def ejecutar_simplex(funcion, matriz, terminos, tipo, signos):
+    funcion, matriz, terminos = np.array(funcion, dtype=float), np.array(matriz, dtype=float), np.array(terminos, dtype=float)
+    filas, columnas = matriz.shape
+    tabla = np.zeros((filas+1, columnas+filas+1))
+    tabla[:filas, :columnas] = matriz
+    for i in range(filas):
+        tabla[i, columnas+i] = 1.0 if signos[i] == '<=' else -1.0
+        tabla[i, -1] = terminos[i]
+    tabla[-1, :columnas] = -funcion if tipo == 'max' else funcion
+    
+    for _ in range(100):
+        col = int(np.argmin(tabla[-1, :-1])) if tipo == 'max' else int(np.argmax(tabla[-1, :-1]))
+        if (tipo == 'max' and tabla[-1, col] >= -1e-10) or (tipo == 'min' and tabla[-1, col] <= 1e-10): break
+        cocientes = [tabla[i, -1]/tabla[i, col] if tabla[i, col] > 1e-10 else float('inf') for i in range(filas)]
+        if all(c == float('inf') for c in cocientes): return {'error': 'Problema no acotado'}
+        fila = int(np.argmin(cocientes))
+        tabla[fila] /= tabla[fila, col]
+        for i in range(filas+1):
+            if i != fila: tabla[i] -= tabla[i, col] * tabla[fila]
+    
+    resultado = np.zeros(columnas)
+    for j in range(columnas):
+        col = tabla[:filas, j]
+        idx = -1
+        for i in range(filas):
+            if abs(col[i] - 1) < 1e-10 and idx == -1: idx = i
+            elif abs(col[i]) > 1e-10: idx = -1; break
+        if idx != -1: resultado[j] = max(0, tabla[idx, -1])
+    
+    valor = np.dot(funcion, resultado)
+    return {'resultado': np.round(resultado, 8).tolist(), 'valor': round(valor if tipo == 'max' else -valor, 8), 'tabla': np.round(tabla, 4).tolist(), 'iteraciones': _}
+
+def resolver_simplex_full(tipo, func_obj, restr_str):
+    all_vars = list(dict.fromkeys(re.findall(r'([a-z]\\d*)', (func_obj + ' ' + restr_str).lower(), re.IGNORECASE)))
+    if not all_vars: return {'error': 'No se encontraron variables.'}
+    coef = parsear_funcion_objetivo(func_obj, all_vars)
+    matriz, terminos, signos = [], [], []
+    for linea in restr_str.split('\\n'):
+        linea = linea.strip()
+        if not linea or re.match(r'^[a-z]\\d*\\s*>=\\s*0$', linea.replace(' ', '').lower()): continue
+        parsed = parsear_restriccion(linea, all_vars)
+        if parsed:
+            while len(parsed['coef']) < len(all_vars): parsed['coef'].append(0.0)
+            matriz.append(parsed['coef'])
+            terminos.append(parsed['rhs'])
+            signos.append(parsed['op'])
+    if not matriz: return {'error': 'No hay restricciones válidas.'}
+    res = ejecutar_simplex(coef, matriz, terminos, tipo, signos)
+    if 'error' not in res: res['variables'] = all_vars
+    return res
+                `);
+                
+                document.getElementById('loading-overlay').style.display = 'none';
+            } catch (error) {
+                document.getElementById('loading-overlay').innerHTML = '<div style="text-align: center; color: #ef4444;"><p style="font-size: 24px;">❌ Error al cargar Python</p><p>' + error.message + '</p></div>';
+            }
+        }
+
+        initPyodide();
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        }
+        
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById('page-' + page).classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('bg-white/20'));
+            document.getElementById('nav-' + page)?.classList.add('bg-white/20');
+            document.getElementById('dashboard-bg').style.display = page === 'dashboard' ? 'block' : 'none';
+        }
+
+        const graphicalExamples = [
+            { type: 'max', objective: '3x + 5y', constraints: '2x + 1y <= 18; 2x + 3y <= 42; 3x + 1y <= 24' },
+            { type: 'max', objective: '3a + 5b', constraints: '2a + 1b <= 18; 2a + 3b <= 42; 3a + 1b <= 24' },
+            { type: 'min', objective: '2x + 3y', constraints: '2x + y >= 8; x + 2y >= 8; x + y >= 5' }
+        ];
+
+        function loadGraphicalExample(i) {
+            document.getElementById('graph-type').value = graphicalExamples[i].type;
+            document.getElementById('graph-objective').value = graphicalExamples[i].objective;
+            document.getElementById('graph-constraints').value = graphicalExamples[i].constraints;
+        }
+
+        async function solveGraphical() {
+            if (!pyodide) { alert('Python aún se está cargando.'); return; }
+            const type = document.getElementById('graph-type').value;
+            const objStr = document.getElementById('graph-objective').value;
+            const constStr = document.getElementById('graph-constraints').value;
+            
+            try {
+                const result = await pyodide.runPythonAsync(`json.dumps(resolver_grafico('${type}', '${objStr}', '${constStr}'))`);
+                const data = JSON.parse(result);
+                if (data.error) { showError('graph-result', 'graph-solution', data.error); return; }
+                graphPoints = data.puntos; optimalPoint = data.optimo; variables = data.variables; currentGraphData = data;
+                drawGraphInteractive(data); showGraphicalResults(data);
+            } catch (error) { showError('graph-result', 'graph-solution', 'Error: ' + error.message); }
+        }
+
+        function drawGraphInteractive(data) {
+            const canvas = document.getElementById('graph-canvas');
+            const ctx = canvas.getContext('2d');
+            const container = document.getElementById('canvas-container');
+            const containerWidth = container.offsetWidth;
+            const scale = containerWidth / 500;
+            canvas.style.width = containerWidth + 'px';
+            canvas.style.height = (400 * scale) + 'px';
+            const w = canvas.width, h = canvas.height, padding = 50;
+            const isDark = document.documentElement.classList.contains('dark');
+            ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            let maxX = 20, maxY = 20;
+            for (const p of data.puntos) { maxX = Math.max(maxX, p.x * 1.3); maxY = Math.max(maxY, p.y * 1.3); }
+            for (const c of data.restricciones) {
+                if (Math.abs(c.coef[0]) > 1e-10) maxX = Math.max(maxX, c.rhs / c.coef[0] * 1.3);
+                if (Math.abs(c.coef[1]) > 1e-10) maxY = Math.max(maxY, c.rhs / c.coef[1] * 1.3);
+            }
+            const scaleX = (w - 2*padding) / maxX, scaleY = (h - 2*padding) / maxY;
+            const toX = x => padding + x * scaleX, toY = y => h - padding - y * scaleY;
+            
+            ctx.strokeStyle = isDark ? '#334155' : '#e5e7eb'; ctx.lineWidth = 1;
+            for (let x = 0; x <= maxX; x += maxX/5) { ctx.beginPath(); ctx.moveTo(toX(x), padding); ctx.lineTo(toX(x), h - padding); ctx.stroke(); }
+            for (let y = 0; y <= maxY; y += maxY/5) { ctx.beginPath(); ctx.moveTo(padding, toY(y)); ctx.lineTo(w - padding, toY(y)); ctx.stroke(); }
+            
+            ctx.fillStyle = isDark ? '#94a3b8' : '#64748b'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+            for (let x = 0; x <= maxX; x += maxX/5) ctx.fillText(x.toFixed(0), toX(x), h - padding + 20);
+            ctx.textAlign = 'right';
+            for (let y = 0; y <= maxY; y += maxY/5) ctx.fillText(y.toFixed(0), padding - 10, toY(y) + 4);
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText(data.variables[0].toUpperCase(), w - padding + 15, h - padding + 5);
+            ctx.fillText(data.variables[1].toUpperCase(), padding - 35, padding - 10);
+            
+            if (data.puntos.length >= 3) {
+                const sorted = [...data.puntos].sort((a, b) => Math.atan2(a.y, a.x) - Math.atan2(b.y, b.x));
+                ctx.fillStyle = isDark ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.3)';
+                ctx.beginPath(); ctx.moveTo(toX(sorted[0].x), toY(sorted[0].y));
+                for (const p of sorted) ctx.lineTo(toX(p.x), toY(p.y));
+                ctx.closePath(); ctx.fill();
+            }
+            
+            const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6'];
+            data.restricciones.forEach((c, i) => {
+                ctx.strokeStyle = colors[i % colors.length]; ctx.lineWidth = 2; ctx.beginPath();
+                const a1 = c.coef[0], a2 = c.coef[1], rhs = c.rhs;
+                if (Math.abs(a2) > 1e-10) { ctx.moveTo(toX(0), toY(rhs/a2)); ctx.lineTo(toX(maxX), toY(rhs/a2 - (a1/a2)*maxX)); }
+                else if (Math.abs(a1) > 1e-10) { ctx.moveTo(toX(rhs/a1), toY(0)); ctx.lineTo(toX(rhs/a1), toY(maxY)); }
+                ctx.stroke();
+            });
+            
+            for (const p of data.puntos) {
+                if (p !== data.optimo) {
+                    ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(toX(p.x), toY(p.y), 10, 0, 2 * Math.PI); ctx.fill();
+                    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(toX(p.x), toY(p.y), 5, 0, 2 * Math.PI); ctx.fill();
+                }
+            }
+            
+            if (data.optimo) {
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.3)'; ctx.beginPath(); ctx.arc(toX(data.optimo.x), toY(data.optimo.y), 20, 0, 2 * Math.PI); ctx.fill();
+                ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(toX(data.optimo.x), toY(data.optimo.y), 14, 0, 2 * Math.PI); ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(toX(data.optimo.x), toY(data.optimo.y), 10, 0, 2 * Math.PI); ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★', toX(data.optimo.x), toY(data.optimo.y) + 4);
+                ctx.fillStyle = isDark ? '#fbbf24' : '#dc2626'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
+                ctx.fillText('ÓPTIMO Z = ' + data.optimo.z.toFixed(2), toX(data.optimo.x) + 20, toY(data.optimo.y) + 5);
+            }
+            
+            canvas.onclick = function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleXClick = canvas.width / rect.width, scaleYClick = canvas.height / rect.height;
+                const clickX = (e.clientX - rect.left) * scaleXClick, clickY = (e.clientY - rect.top) * scaleYClick;
+                let closestPoint = null, minDist = 30;
+                for (const p of data.puntos) {
+                    const dist = Math.sqrt(Math.pow(toX(p.x) - clickX, 2) + Math.pow(toY(p.y) - clickY, 2));
+                    if (dist < minDist) { minDist = dist; closestPoint = p; }
+                }
+                const tooltip = document.getElementById('graph-tooltip');
+                const pointInfo = document.getElementById('point-info');
+                const pointInfoContent = document.getElementById('point-info-content');
+                if (closestPoint) {
+                    const isOptimal = closestPoint === data.optimo;
+                    tooltip.innerHTML = '<div style="font-weight: bold; margin-bottom: 4px; font-size: 14px;">' + (isOptimal ? '⭐ PUNTO ÓPTIMO' : '📍 Punto Candidato') + '</div><div>' + data.variables[0] + ' = ' + closestPoint.x.toFixed(4) + '</div><div>' + data.variables[1] + ' = ' + closestPoint.y.toFixed(4) + '</div><div style="font-weight: bold; margin-top: 4px; font-size: 15px;">Z = ' + closestPoint.z.toFixed(4) + '</div>';
+                    tooltip.classList.remove('hidden');
+                    tooltip.style.left = (e.clientX - rect.left + 15) + 'px';
+                    tooltip.style.top = (e.clientY - rect.top - 70) + 'px';
+                    pointInfo.className = isOptimal ? 'point-info-panel optimal' : 'point-info-panel';
+                    pointInfoContent.innerHTML = '<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;"><span style="font-size: 24px;">' + (isOptimal ? '⭐' : '📍') + '</span><div><div style="font-weight: bold; font-size: 16px;">' + (isOptimal ? 'Punto Óptimo' : 'Punto Candidato') + '</div><div style="opacity: 0.8; font-size: 12px;">Haz clic en otro punto para ver sus coordenadas</div></div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;"><div><div style="font-size: 12px; opacity: 0.8;">' + data.variables[0] + '</div><div style="font-size: 20px; font-weight: bold;">' + closestPoint.x.toFixed(4) + '</div></div><div><div style="font-size: 12px; opacity: 0.8;">' + data.variables[1] + '</div><div style="font-size: 20px; font-weight: bold;">' + closestPoint.y.toFixed(4) + '</div></div><div><div style="font-size: 12px; opacity: 0.8;">Z</div><div style="font-size: 20px; font-weight: bold;">' + closestPoint.z.toFixed(4) + '</div></div></div>';
+                    pointInfo.classList.remove('hidden');
+                } else { tooltip.classList.add('hidden'); }
+            };
+            canvas.onmouseleave = function() { document.getElementById('graph-tooltip').classList.add('hidden'); };
+        }
+
+        function showGraphicalResults(data) {
+            document.getElementById('graph-result').classList.remove('hidden');
+            document.getElementById('graph-solution').innerHTML = '<div class="p-4 rounded-lg status-optimal mb-4"><p class="font-bold text-green-600">✅ Solución Óptima</p></div><div class="grid grid-cols-3 gap-4 mb-4"><div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">' + data.variables[0] + '</p><p class="text-xl font-bold">' + data.optimo.x.toFixed(4) + '</p></div><div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">' + data.variables[1] + '</p><p class="text-xl font-bold">' + data.optimo.y.toFixed(4) + '</p></div><div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">Z</p><p class="text-xl font-bold text-green-600">' + data.optimo.z.toFixed(4) + '</p></div></div><h4 class="font-bold mb-2">Todos los puntos candidatos:</h4><div class="overflow-x-auto"><table class="text-sm"><thead><tr><th>#</th><th>' + data.variables[0] + '</th><th>' + data.variables[1] + '</th><th>Z</th><th>Tipo</th></tr></thead><tbody>' + data.puntos.map((p, i) => '<tr style="' + (p===data.optimo ? 'background:rgba(34,197,94,0.2)' : '') + '"><td>' + (i+1) + '</td><td>' + p.x.toFixed(4) + '</td><td>' + p.y.toFixed(4) + '</td><td>' + p.z.toFixed(4) + '</td><td>' + (p===data.optimo ? '⭐ ÓPTIMO' : '📍 Candidato') + '</td></tr>').join('') + '</tbody></table></div>';
+        }
+
+        const simplexExamples = [
+            { type: 'max', objective: '4a + 3b', constraints: '2a + b <= 8\na + 2b <= 8' },
+            { type: 'max', objective: '40x + 30y', constraints: 'x + 2y <= 40\n4x + 3y <= 120' },
+            { type: 'min', objective: '2x + 3y', constraints: '2x + y >= 8\nx + 2y >= 8' },
+            { type: 'max', objective: '3x + 2y + 5z', constraints: 'x + 2y + z <= 430\n3x + 2z <= 460\nx + 4y <= 420' }
+        ];
+
+        function loadSimplexExample(i) {
+            document.getElementById('simplex-type').value = simplexExamples[i].type;
+            document.getElementById('simplex-objective').value = simplexExamples[i].objective;
+            document.getElementById('simplex-constraints').value = simplexExamples[i].constraints;
+        }
+
+        async function solveSimplex() {
+            if (!pyodide) { alert('Python aún se está cargando.'); return; }
+            const type = document.getElementById('simplex-type').value;
+            const objStr = document.getElementById('simplex-objective').value;
+            const constStr = document.getElementById('simplex-constraints').value.replace(/\n/g, '\\n');
+            try {
+                const result = await pyodide.runPythonAsync(`json.dumps(resolver_simplex_full('${type}', '${objStr}', '${constStr}'))`);
+                const data = JSON.parse(result);
+                if (data.error) { showError('simplex-result', 'simplex-solution', data.error); document.getElementById('simplex-table-container').classList.add('hidden'); return; }
+                showSimplexResults(data); showSimplexTable(data);
+            } catch (error) { showError('simplex-result', 'simplex-solution', 'Error: ' + error.message); }
+        }
+
+        function showSimplexResults(data) {
+            document.getElementById('simplex-result').classList.remove('hidden');
+            document.getElementById('simplex-solution').innerHTML = '<div class="p-4 rounded-lg status-optimal mb-4"><p class="font-bold text-green-600">✅ Solución Óptima</p></div><div class="grid grid-cols-2 gap-4 mb-4">' + data.variables.map((v, i) => '<div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">' + v + '</p><p class="text-xl font-bold">' + data.resultado[i].toFixed(4) + '</p></div>').join('') + '<div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">Z óptimo</p><p class="text-xl font-bold text-green-600">' + data.valor.toFixed(4) + '</p></div><div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">Iteraciones</p><p class="text-xl font-bold">' + data.iteraciones + '</p></div></div>';
+        }
+
+        function showSimplexTable(data) {
+            document.getElementById('simplex-table-container').classList.remove('hidden');
+            const vars = data.variables, slack = vars.map((_, i) => 's' + (i+1)), headers = [...vars, ...slack, 'RHS'];
+            document.getElementById('simplex-table').innerHTML = '<table class="text-xs"><thead><tr><th>Fila</th>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>' + data.tabla.map((row, i) => '<tr style="' + (i === data.tabla.length - 1 ? 'background: rgba(59, 130, 246, 0.1)' : '') + '"><td style="font-weight: bold;">' + (i === data.tabla.length - 1 ? 'Z' : 'F' + (i+1)) + '</td>' + row.map(val => '<td>' + val + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+        }
+
+        function showError(containerId, contentId, message) {
+            document.getElementById(containerId).classList.remove('hidden');
+            document.getElementById(contentId).innerHTML = '<div class="p-4 rounded-lg status-error"><p class="font-bold text-red-600">❌ Error</p><p>' + message + '</p></div>';
+        }
+
+        showPage('dashboard');
+        window.addEventListener('resize', () => { if (currentGraphData) drawGraphInteractive(currentGraphData); });
+    </script>
+</body>
+</html>
