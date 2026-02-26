@@ -87,9 +87,10 @@
         }
         .sidebar > * { position: relative; z-index: 1; }
         .sidebar.collapsed {
-            width: auto;
-            background: transparent;
-            padding: 16px;
+            width: 0 !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         .sidebar.collapsed::before { display: none; }
         .sidebar.collapsed .sidebar-header-text { display: none; }
@@ -130,17 +131,18 @@
 
         /* Collapsed sidebar: show only the image inside a compact circular wrapper */
         .sidebar.collapsed {
-            width: 80px;
-            padding: 8px 6px;
+            width: 80px !important;
+            padding: 8px 0 !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
+            margin: 0 !important;
         }
         .sidebar.collapsed .main-logo { justify-content: center; }
         .sidebar.collapsed .logo-wrapper {
             min-width: 0;
             padding: 4px;
-            border-radius: 9999px;
+            border-radius: 100% !important;
             width: 72px;
             height: 72px;
             display: inline-flex;
