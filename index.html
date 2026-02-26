@@ -423,6 +423,13 @@
             height: 40%;
             pointer-events: none;
         }
+        @media (min-width: 1025px) {
+            .sidebar.collapsed {
+                width: 130px !important;
+                padding: 8px 6px !important;
+                overflow: hidden !important;
+            }
+        }
         @media (max-width: 1024px) {
             .sidebar {
                 position: fixed;
@@ -430,7 +437,6 @@
                 z-index: 100;
                 min-height: 100vh;
             }
-            .sidebar.collapsed { position: relative; }
             .main-content { width: 100%; }
             .dashboard-bg { left: 0; }
         }
