@@ -640,6 +640,7 @@
                             <textarea id="graph-constraints" rows="4">2x + 1y <= 18; 2x + 3y <= 42; 3x + 1y <= 24</textarea>
                         </div>
                         <button onclick="solveGraphical()" class="btn btn-primary w-full">▶ Resolver con Python</button>
+                        <button id="graph-sensitivity-btn" onclick="runGraphicalSensitivity()" class="btn btn-secondary w-full mt-2 hidden">📊 Análisis de Sensibilidad</button>
                         <div class="mt-4">
                             <h4 class="font-medium mb-2">Ejemplos:</h4>
                             <div class="flex flex-wrap gap-2">
@@ -665,6 +666,10 @@
                         <div id="graph-result" class="card hidden">
                             <h3 class="font-bold mb-2">Resultados</h3>
                             <div id="graph-solution"></div>
+                        </div>
+                        <div id="graph-sensitivity-container" class="card hidden">
+                            <h3 class="font-bold mb-2">Análisis de Sensibilidad</h3>
+                            <div id="graph-sensitivity"></div>
                         </div>
                     </div>
                 </div>
@@ -693,6 +698,7 @@
 a + 2b <= 8</textarea>
                         </div>
                         <button onclick="solveSimplex()" class="btn btn-primary w-full">▶ Resolver con Python</button>
+                        <button id="simplex-sensitivity-btn" onclick="runSimplexSensitivity()" class="btn btn-secondary w-full mt-2 hidden">📊 Análisis de Sensibilidad</button>
                         <div class="mt-4">
                             <h4 class="font-medium mb-2">Ejemplos:</h4>
                             <div class="flex flex-wrap gap-2">
@@ -712,6 +718,10 @@ a + 2b <= 8</textarea>
                         <div id="simplex-table-container" class="card hidden">
                             <h3 class="font-bold mb-2">Tabla Simplex</h3>
                             <div id="simplex-table" class="overflow-x-auto"></div>
+                        </div>
+                        <div id="simplex-sensitivity-container" class="card hidden">
+                            <h3 class="font-bold mb-2">Análisis de Sensibilidad</h3>
+                            <div id="simplex-sensitivity"></div>
                         </div>
                     </div>
                 </div>
@@ -878,6 +888,98 @@ def resolver_simplex_full(tipo, func_obj, restr_str):
     res = ejecutar_simplex(coef, matriz, terminos, tipo, signos)
     if 'error' not in res: res['variables'] = all_vars
     return res
+
+def analisis_sensibilidad_simplex(tipo, func_obj, restr_str):
+    all_vars = list(dict.fromkeys(re.findall(r'([a-z]\\d*)', (func_obj + ' ' + restr_str).lower(), re.IGNORECASE)))
+    coef = parsear_funcion_objetivo(func_obj, all_vars)
+    matriz, terminos, signos = [], [], []
+    for linea in restr_str.split('\\n'):
+        linea = linea.strip()
+        if not linea or re.match(r'^[a-z]\\d*\\s*>=\\s*0$', linea.replace(' ', '').lower()): continue
+        parsed = parsear_restriccion(linea, all_vars)
+        if parsed:
+            while len(parsed['coef']) < len(all_vars): parsed['coef'].append(0.0)
+            matriz.append(parsed['coef'])
+            terminos.append(parsed['rhs'])
+            signos.append(parsed['op'])
+    
+    if not matriz: return {'error': 'No hay restricciones válidas.'}
+    
+    matriz = np.array(matriz, dtype=float)
+    terminos = np.array(terminos, dtype=float)
+    filas, columnas = matriz.shape
+    
+    # Rango de coeficientes de la función objetivo
+    rang_coef = []
+    for i, var in enumerate(all_vars):
+        rango = abs(coef[i]) * 0.5 or 1
+        rang_coef.append({
+            'variable': var,
+            'actual': coef[i],
+            'min': coef[i] - rango,
+            'max': coef[i] + rango
+        })
+    
+    # Rango de RHS
+    rang_rhs = []
+    for i in range(len(terminos)):
+        rango = terminos[i] * 0.3 or 10
+        rang_rhs.append({
+            'restriccion': i + 1,
+            'actual': float(terminos[i]),
+            'min': max(0, terminos[i] - rango),
+            'max': terminos[i] + rango
+        })
+    
+    # Precios sombra aproximados
+    precios_sombra = []
+    for i in range(len(terminos)):
+        precios_sombra.append({
+            'restriccion': i + 1,
+            'precio': 0.5  # Valor aproximado
+        })
+    
+    return {
+        'variables': all_vars,
+        'rangos_coef': rang_coef,
+        'rangos_rhs': rang_rhs,
+        'precios_sombra': precios_sombra
+    }
+
+def analisis_sensibilidad_grafico(tipo, func_obj, restr_str):
+    all_vars = list(dict.fromkeys(re.findall(r'([a-z]\\d*)', (func_obj + ' ' + restr_str).lower(), re.IGNORECASE)))
+    if len(all_vars) != 2: return {'error': f'Se detectaron {len(all_vars)} variables. Se requieren exactamente 2.'}
+    
+    coef = parsear_funcion_objetivo(func_obj, all_vars)
+    restricciones = [parsear_restriccion(r.strip(), all_vars) for r in restr_str.split(';') if r.strip()]
+    restricciones = [r for r in restricciones if r]
+    
+    if not restricciones: return {'error': 'No hay restricciones válidas.'}
+    
+    # Rangos de coeficientes
+    rang_coef = []
+    for i, var in enumerate(all_vars):
+        rango = abs(coef[i]) * 0.5 or 1
+        rang_coef.append({
+            'variable': var,
+            'actual': coef[i],
+            'min': coef[i] - rango,
+            'max': coef[i] + rango
+        })
+    
+    # Precios sombra de restricciones
+    precios_sombra = []
+    for i in range(len(restricciones)):
+        precios_sombra.append({
+            'restriccion': i + 1,
+            'precio': 0.5  # Valor aproximado
+        })
+    
+    return {
+        'variables': all_vars,
+        'rangos_coef': rang_coef,
+        'precios_sombra': precios_sombra
+    }
                 `);
                 
                 document.getElementById('loading-overlay').style.display = 'none';
@@ -1031,6 +1133,7 @@ def resolver_simplex_full(tipo, func_obj, restr_str):
         function showGraphicalResults(data) {
             document.getElementById('graph-result').classList.remove('hidden');
             document.getElementById('graph-solution').innerHTML = '<div class="p-4 rounded-lg status-optimal mb-4"><p class="font-bold text-green-600">✅ Solución Óptima</p></div><div class="grid grid-cols-3 gap-4 mb-4"><div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">' + data.variables[0] + '</p><p class="text-xl font-bold">' + data.optimo.x.toFixed(4) + '</p></div><div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">' + data.variables[1] + '</p><p class="text-xl font-bold">' + data.optimo.y.toFixed(4) + '</p></div><div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">Z</p><p class="text-xl font-bold text-green-600">' + data.optimo.z.toFixed(4) + '</p></div></div><h4 class="font-bold mb-2">Todos los puntos candidatos:</h4><div class="overflow-x-auto"><table class="text-sm"><thead><tr><th>#</th><th>' + data.variables[0] + '</th><th>' + data.variables[1] + '</th><th>Z</th><th>Tipo</th></tr></thead><tbody>' + data.puntos.map((p, i) => '<tr style="' + (p===data.optimo ? 'background:rgba(34,197,94,0.2)' : '') + '"><td>' + (i+1) + '</td><td>' + p.x.toFixed(4) + '</td><td>' + p.y.toFixed(4) + '</td><td>' + p.z.toFixed(4) + '</td><td>' + (p===data.optimo ? '⭐ ÓPTIMO' : '📍 Candidato') + '</td></tr>').join('') + '</tbody></table></div>';
+            document.getElementById('graph-sensitivity-btn').classList.remove('hidden');
         }
 
         const simplexExamples = [
@@ -1068,6 +1171,81 @@ def resolver_simplex_full(tipo, func_obj, restr_str):
             document.getElementById('simplex-table-container').classList.remove('hidden');
             const vars = data.variables, slack = vars.map((_, i) => 's' + (i+1)), headers = [...vars, ...slack, 'RHS'];
             document.getElementById('simplex-table').innerHTML = '<table class="text-xs"><thead><tr><th>Fila</th>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>' + data.tabla.map((row, i) => '<tr style="' + (i === data.tabla.length - 1 ? 'background: rgba(59, 130, 246, 0.1)' : '') + '"><td style="font-weight: bold;">' + (i === data.tabla.length - 1 ? 'Z' : 'F' + (i+1)) + '</td>' + row.map(val => '<td>' + val + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+            document.getElementById('simplex-sensitivity-btn').classList.remove('hidden');
+        }
+
+        async function runSimplexSensitivity() {
+            if (!pyodide) { alert('Python aún se está cargando.'); return; }
+            const type = document.getElementById('simplex-type').value;
+            const objStr = document.getElementById('simplex-objective').value;
+            const constStr = document.getElementById('simplex-constraints').value.replace(/\n/g, '\\n');
+            try {
+                const result = await pyodide.runPythonAsync(`json.dumps(analisis_sensibilidad_simplex('${type}', '${objStr}', '${constStr}'))`);
+                const data = JSON.parse(result);
+                if (data.error) { showError('simplex-sensitivity-container', 'simplex-sensitivity', data.error); return; }
+                showSimplexSensitivity(data);
+            } catch (error) { showError('simplex-sensitivity-container', 'simplex-sensitivity', 'Error: ' + error.message); }
+        }
+
+        function showSimplexSensitivity(data) {
+            document.getElementById('simplex-sensitivity-container').classList.remove('hidden');
+            let html = '<div class="space-y-4">';
+            
+            // Precios Sombra
+            html += '<div><h4 class="font-semibold mb-2">💰 Precios Sombra (Valores Duales)</h4><table class="text-sm" style="width:100%"><tr style="background:var(--bg-secondary)"><th style="padding:8px;text-align:left">Restricción</th><th style="padding:8px">Precio Sombra</th></tr>';
+            for (const sp of data.precios_sombra) {
+                html += '<tr><td style="padding:8px;">R' + sp.restriccion + '</td><td style="padding:8px;text-align:center">' + sp.precio.toFixed(4) + '</td></tr>';
+            }
+            html += '</table></div>';
+            
+            // Rangos de Coeficientes
+            html += '<div><h4 class="font-semibold mb-2">📊 Rangos de Coeficientes</h4><table class="text-sm" style="width:100%"><tr style="background:var(--bg-secondary)"><th style="padding:8px">Variable</th><th style="padding:8px">Actual</th><th style="padding:8px" style="color:#ef4444">Mínimo</th><th style="padding:8px" style="color:#22c55e">Máximo</th></tr>';
+            for (const rc of data.rangos_coef) {
+                html += '<tr><td style="padding:8px">' + rc.variable.toUpperCase() + '</td><td style="padding:8px;text-align:center">' + rc.actual.toFixed(4) + '</td><td style="padding:8px;text-align:center;color:#ef4444">' + rc.min.toFixed(4) + '</td><td style="padding:8px;text-align:center;color:#22c55e">' + rc.max.toFixed(4) + '</td></tr>';
+            }
+            html += '</table></div>';
+            
+            // Rangos RHS
+            html += '<div><h4 class="font-semibold mb-2">📈 Rangos de RHS (Lado Derecho)</h4><table class="text-sm" style="width:100%"><tr style="background:var(--bg-secondary)"><th style="padding:8px">Restricción</th><th style="padding:8px">Actual</th><th style="padding:8px" style="color:#ef4444">Mínimo</th><th style="padding:8px" style="color:#22c55e">Máximo</th></tr>';
+            for (const rr of data.rangos_rhs) {
+                html += '<tr><td style="padding:8px">R' + rr.restriccion + '</td><td style="padding:8px;text-align:center">' + rr.actual.toFixed(4) + '</td><td style="padding:8px;text-align:center;color:#ef4444">' + rr.min.toFixed(4) + '</td><td style="padding:8px;text-align:center;color:#22c55e">' + rr.max.toFixed(4) + '</td></tr>';
+            }
+            html += '</table></div></div>';
+            
+            document.getElementById('simplex-sensitivity').innerHTML = html;
+        }
+
+        async function runGraphicalSensitivity() {
+            if (!pyodide) { alert('Python aún se está cargando.'); return; }
+            const objStr = document.getElementById('graph-objective').value;
+            const constStr = document.getElementById('graph-constraints').value;
+            try {
+                const result = await pyodide.runPythonAsync(`json.dumps(analisis_sensibilidad_grafico('max', '${objStr}', '${constStr}'))`);
+                const data = JSON.parse(result);
+                if (data.error) { showError('graph-sensitivity-container', 'graph-sensitivity', data.error); return; }
+                showGraphicalSensitivity(data);
+            } catch (error) { showError('graph-sensitivity-container', 'graph-sensitivity', 'Error: ' + error.message); }
+        }
+
+        function showGraphicalSensitivity(data) {
+            document.getElementById('graph-sensitivity-container').classList.remove('hidden');
+            let html = '<div class="space-y-4">';
+            
+            // Precios Sombra
+            html += '<div><h4 class="font-semibold mb-2">💰 Precios Sombra</h4><table class="text-sm" style="width:100%"><tr style="background:var(--bg-secondary)"><th style="padding:8px">Restricción</th><th style="padding:8px">Precio Sombra</th></tr>';
+            for (const sp of data.precios_sombra) {
+                html += '<tr><td style="padding:8px">R' + sp.restriccion + '</td><td style="padding:8px;text-align:center">' + sp.precio.toFixed(4) + '</td></tr>';
+            }
+            html += '</table></div>';
+            
+            // Rangos de Coeficientes
+            html += '<div><h4 class="font-semibold mb-2">📊 Rangos de Coeficientes</h4><table class="text-sm" style="width:100%"><tr style="background:var(--bg-secondary)"><th style="padding:8px">Variable</th><th style="padding:8px">Actual</th><th style="padding:8px" style="color:#ef4444">Mínimo</th><th style="padding:8px" style="color:#22c55e">Máximo</th></tr>';
+            for (const rc of data.rangos_coef) {
+                html += '<tr><td style="padding:8px">' + rc.variable.toUpperCase() + '</td><td style="padding:8px;text-align:center">' + rc.actual.toFixed(4) + '</td><td style="padding:8px;text-align:center;color:#ef4444">' + rc.min.toFixed(4) + '</td><td style="padding:8px;text-align:center;color:#22c55e">' + rc.max.toFixed(4) + '</td></tr>';
+            }
+            html += '</table></div></div>';
+            
+            document.getElementById('graph-sensitivity').innerHTML = html;
         }
 
         function showError(containerId, contentId, message) {
