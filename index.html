@@ -131,14 +131,22 @@
 
         /* Collapsed sidebar: show only the image inside a compact circular wrapper */
         .sidebar.collapsed {
-            width: 80px !important;
-            padding: 8px 0 !important;
+            width: 0 !important;
+            overflow: visible !important;
+            padding: 0 !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
             margin: 0 !important;
         }
-        .sidebar.collapsed .main-logo { justify-content: center; }
+        .sidebar.collapsed .main-logo {
+            position: fixed !important;
+            left: 8px !important;
+            top: 8px !important;
+            z-index: 999 !important;
+            margin: 0 !important;
+            justify-content: center;
+        }
         .sidebar.collapsed .logo-wrapper {
             min-width: 0;
             padding: 4px;
