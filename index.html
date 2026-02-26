@@ -132,9 +132,9 @@
         .sidebar.collapsed {
             width: 80px;
             padding: 8px 6px;
-            background: transparent;
-            border: none;
-            box-shadow: none;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
         }
         .sidebar.collapsed .main-logo { justify-content: center; }
         .sidebar.collapsed .logo-wrapper {
@@ -148,6 +148,12 @@
             justify-content: center;
             box-shadow: 0 6px 18px rgba(2,6,23,0.3);
             background: rgba(255,255,255,0.98);
+        }
+        /* Asegurar que el overlay/difuminado desaparezca al colapsar */
+        .sidebar.collapsed::before {
+            display: none !important;
+            opacity: 0 !important;
+            background: none !important;
         }
         .sidebar.collapsed .logo-wrapper img { width: 64px !important; height: 64px !important; }
         .dark .sidebar.collapsed .logo-wrapper { background: rgba(59,130,246,0.28); }
