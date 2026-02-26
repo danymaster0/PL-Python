@@ -106,6 +106,24 @@
         .logo-box {
             background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
         }
+        .logo-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 8px 20px rgba(2,6,23,0.4);
+        }
+        .main-logo img {
+            filter: contrast(1.25) saturate(1.35) brightness(1.05);
+            transition: filter 0.2s ease, transform 0.2s ease;
+        }
+        .main-logo img:hover { transform: scale(1.02); }
+        .dark .logo-wrapper {
+            background: linear-gradient(135deg, rgba(59,130,246,0.14), rgba(30,64,175,0.18));
+            box-shadow: 0 8px 20px rgba(2,6,23,0.6);
+        }
         .btn {
             padding: 10px 20px;
             border-radius: 8px;
@@ -447,7 +465,14 @@
     <div class="flex min-h-screen">
         <div id="sidebar" class="sidebar text-white flex flex-col">
             <div class="main-logo flex items-center gap-3 mb-8 p-2" onclick="toggleSidebar()">
-                <img src="logo.png" alt="Simplex PL Logo" class="w-12 h-12 flex-shrink-0 rounded-lg" style="object-fit: contain;">
+                <div class="logo-wrapper">
+                    <img src="logo.png" alt="AMEMCS Logo" class="w-20 h-20 flex-shrink-0 rounded-lg" style="object-fit: contain;">
+                </div>
+                <div class="sidebar-header-text whitespace-nowrap ml-3">
+                    <div class="font-extrabold text-sm">AMEMCS</div>
+                    <div class="font-bold">Simplex PL</div>
+                    <div class="text-xs text-blue-300">Python + HTML</div>
+                </div>
             </div>
             
             <nav class="space-y-2 flex-1">
