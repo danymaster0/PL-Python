@@ -532,12 +532,11 @@
                     <span class="sidebar-text whitespace-nowrap">Método Simplex</span>
                 </button>
                 <div class="border-t border-white/20 my-3"></div>
-                <button class="w-full text-left p-3 rounded-lg nav-disabled flex items-center gap-3" disabled>
+                <button onclick="showPage('gran-m')" class="w-full text-left p-3 rounded-lg hover:bg-white/10 flex items-center gap-3" id="nav-gran-m">
                     <span class="text-xl flex-shrink-0">🔢</span>
                     <span class="sidebar-text whitespace-nowrap">Gran M</span>
-                    <span class="coming-soon">Próximamente</span>
                 </button>
-                <button class="w-full text-left p-3 rounded-lg nav-disabled flex items-center gap-3" disabled>
+                <button onclick="showPage('two-phase')" class="w-full text-left p-3 rounded-lg nav-disabled flex items-center gap-3" id="nav-two-phase" disabled>
                     <span class="text-xl flex-shrink-0">📋</span>
                     <span class="sidebar-text whitespace-nowrap">Dos Fases</span>
                     <span class="coming-soon">Próximamente</span>
@@ -599,13 +598,12 @@
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="card-glass opacity-50" style="border-style: dashed;">
+                    <div class="card-glass cursor-pointer hover:border-blue-400" onclick="showPage('gran-m')">
                         <div class="flex items-center gap-3 mb-2 flex-wrap">
                             <span class="text-2xl">🔢</span>
                             <h3 class="font-bold text-lg">Gran M</h3>
-                            <span class="coming-soon">Próximamente</span>
                         </div>
-                        <p class="text-secondary">Restricciones = o ≥.</p>
+                        <p class="text-secondary">Restricciones = o ≥. Uso de penalizaciones.</p>
                     </div>
                     <div class="card-glass opacity-50" style="border-style: dashed;">
                         <div class="flex items-center gap-3 mb-2 flex-wrap">
@@ -727,25 +725,110 @@ a + 2b <= 8</textarea>
                 </div>
             </div>
 
+            <div id="page-gran-m" class="page hidden">
+                <h1 class="text-2xl md:text-3xl font-bold mb-2 text-white">Método de la Gran M</h1>
+                <p class="mb-6 text-blue-200">Ideal para problemas con restricciones de igualdad (=) o de mayor o igual (≥)</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 grid-responsive">
+                    <div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Tipo de Problema</label>
+                            <select id="granm-type">
+                                <option value="max">Maximizar</option>
+                                <option value="min">Minimizar</option>
+                            </select>
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Función Objetivo</label>
+                            <input type="text" id="granm-objective" value="3x1 + 5x2" placeholder="Ej: 3x1 + 5x2">
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Restricciones (una por línea)</label>
+                            <textarea id="granm-constraints" rows="4">1x1 <= 4
+2x2 <= 12
+3x1 + 2x2 = 18</textarea>
+                        </div>
+                        <button onclick="solveGranM()" class="btn btn-primary w-full shadow-lg">▶ Resolver con Python</button>
+                        <div class="mt-4">
+                            <h4 class="font-medium mb-2">Ejemplos Rápidos:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="loadGranMExample(0)" class="btn btn-secondary text-sm">Ejemplo del Usuario</button>
+                                <button onclick="loadGranMExample(1)" class="btn btn-secondary text-sm">Problema con ≥</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div id="granm-result" class="card hidden">
+                            <h3 class="font-bold mb-2">Resumen de Solución</h3>
+                            <div id="granm-solution"></div>
+                        </div>
+                        <div id="granm-steps-container" class="card hidden">
+                            <h3 class="font-bold mb-4">Iteraciones del Simplex (Pivoteo)</h3>
+                            <div id="granm-steps" class="space-y-6"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="page-about" class="page hidden">
                 <h1 class="text-2xl md:text-3xl font-bold mb-2">Acerca de</h1>
-                <p class="mb-6" style="color: var(--text-secondary)">Información del proyecto</p>
+                <p class="mb-6" style="color: var(--text-secondary)">Información del proyecto y guía de terminología</p>
 
-                <div class="card">
-                    <h3 class="font-bold mb-2">Simplex PL - Python + HTML</h3>
-                    <p class="mb-4" style="color: var(--text-secondary)">Calculadora de programación lineal con Python (Pyodide).</p>
-                    <ul class="list-disc list-inside space-y-1" style="color: var(--text-secondary)">
-                        <li>Haz clic en ⚡ para colapsar/expandir el menú</li>
-                        <li>Haz clic en los puntos del gráfico para ver información</li>
-                        <li>Variables con cualquier nombre (a, b, x, y, etc.)</li>
-                        <li>Modo claro/oscuro</li>
-                        <li>Diseño responsive</li>
-                    </ul>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card">
+                        <h3 class="font-bold mb-4 flex items-center gap-2">
+                            <span class="text-blue-500">📘</span> Terminología General
+                        </h3>
+                        <div class="space-y-4 text-sm" style="color: var(--text-secondary)">
+                            <div>
+                                <span class="font-bold text-white">LD (Lado Derecho):</span> 
+                                Representa las constantes o límites de las restricciones (anteriormente conocido como RHS). Es el valor que limita el uso de recursos.
+                            </div>
+                            <div>
+                                <span class="font-bold text-white">Variables x₁, x₂...:</span> 
+                                Variables de decisión que representan las cantidades a calcular.
+                            </div>
+                            <div>
+                                <span class="font-bold text-white">Z:</span> 
+                                Representa la Función Objetivo, el valor total que se busca maximizar o minimizar.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="font-bold mb-4 flex items-center gap-2">
+                            <span class="text-blue-500">🔢</span> Simplex y Gran M
+                        </h3>
+                        <div class="space-y-4 text-sm" style="color: var(--text-secondary)">
+                            <div>
+                                <span class="font-bold text-white">Variables de Holgura (sᵢ):</span> 
+                                Utilizadas en restricciones "menor o igual" (≤). Representan la cantidad de recurso no utilizado.
+                            </div>
+                            <div>
+                                <span class="font-bold text-white">Variables de Exceso (eᵢ):</span> 
+                                Utilizadas en restricciones "mayor o igual" (≥). Representan la cantidad que excede el mínimo requerido.
+                            </div>
+                            <div>
+                                <span class="font-bold text-white">Variables Artificiales (aᵢ):</span> 
+                                Variables matemáticas auxiliares necesarias para iniciar el algoritmo en restricciones de igualdad o exceso.
+                            </div>
+                            <div>
+                                <span class="font-bold text-white">Penalización M:</span> 
+                                Un número extremadamente grande asignado a las variables artificiales para forzarlas a salir de la solución final.
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="card">
-                    <h3 class="font-bold mb-2">¿Por qué "Problema no acotado"?</h3>
-                    <p style="color: var(--text-secondary)">Ocurre cuando no hay límites superiores para las variables. Las restricciones de no negatividad se asumen automáticamente.</p>
+                <div class="card mt-6">
+                    <h3 class="font-bold mb-2">Simplex PL - Python + HTML</h3>
+                    <p class="mb-4" style="color: var(--text-secondary)">Calculadora avanzada de programación lineal habilitada por Pyodide.</p>
+                    <ul class="list-disc list-inside space-y-1" style="color: var(--text-secondary)">
+                        <li>Panel interactivo con soporte para múltiples métodos.</li>
+                        <li>Análisis de sensibilidad detallado y gráfico interactivo.</li>
+                        <li>Formatos numéricos de alta precisión (fracciones y decimales).</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -920,7 +1003,7 @@ def analisis_sensibilidad_simplex(tipo, func_obj, restr_str):
             'max': coef[i] + rango
         })
     
-    # Rango de RHS
+    # Rango de LD
     rang_rhs = []
     for i in range(len(terminos)):
         rango = terminos[i] * 0.3 or 10
@@ -980,6 +1063,180 @@ def analisis_sensibilidad_grafico(tipo, func_obj, restr_str):
         'rangos_coef': rang_coef,
         'precios_sombra': precios_sombra
     }
+
+class MetodoGranM:
+    def __init__(self, c, A, b, restricciones, optimizacion='max'):
+        self.M = 1e7
+        self.tolerancia = 1e-6
+        self.c_orig = [float(x) for x in c]
+        self.A_orig = [[float(val) for val in row] for row in A]
+        self.b_orig = [float(x) for x in b]
+        self.restricciones = restricciones
+        self.optimizacion = optimizacion.lower()
+        self.num_vars_orig = len(c)
+        self.num_restr = len(b)
+        self.variables = [f"x{i+1}" for i in range(self.num_vars_orig)]
+        self.tabla = []
+        self.base = []
+        self.iteraciones = []
+
+    def es_cero(self, val):
+        return abs(val) < self.tolerancia
+
+    def preparar_tabla_inicial(self):
+        s_count, e_count, a_count = 1, 1, 1
+        slack_names, excess_names, artificial_names = [], [], []
+        restr_types = []
+        for op in self.restricciones:
+            if op == '<=':
+                name = f"s{s_count}"; slack_names.append(name); s_count += 1; restr_types.append(('s', name))
+            elif op == '>=':
+                e_name = f"e{e_count}"; excess_names.append(e_name); e_count += 1
+                a_name = f"a{a_count}"; artificial_names.append(a_name); a_count += 1
+                restr_types.append(('ea', e_name, a_name))
+            elif op == '=':
+                a_name = f"a{a_count}"; artificial_names.append(a_name); a_count += 1
+                restr_types.append(('a', a_name))
+        
+        self.all_vars = self.variables + slack_names + excess_names + artificial_names
+        nv = len(self.all_vars)
+        z_row = [0.0] * (nv + 1)
+        for j in range(self.num_vars_orig):
+            z_row[j] = -self.c_orig[j]
+        
+        m_sign = 1.0 if self.optimizacion == 'max' else -1.0
+        for i, name in enumerate(self.all_vars):
+            if name.startswith('a'):
+                z_row[i] = m_sign * self.M
+                
+        A_ext = []
+        self.base = []
+        cs, ce, ca = 0, 0, 0
+        for i, tip in enumerate(restr_types):
+            row = [0.0] * nv
+            for j in range(self.num_vars_orig):
+                row[j] = self.A_orig[i][j]
+            if tip[0] == 's':
+                row[self.num_vars_orig + cs] = 1.0; self.base.append(tip[1]); cs += 1
+            elif tip[0] == 'ea':
+                row[self.num_vars_orig+len(slack_names)+ce] = -1.0
+                row[self.num_vars_orig+len(slack_names)+len(excess_names)+ca] = 1.0
+                self.base.append(tip[2]); ce += 1; ca += 1
+            elif tip[0] == 'a':
+                row[self.num_vars_orig+len(slack_names)+len(excess_names)+ca] = 1.0
+                self.base.append(tip[1]); ca += 1
+            A_ext.append(row + [self.b_orig[i]])
+        self.tabla = [z_row] + A_ext
+
+    def ajustar_fila_z(self):
+        for i, bv in enumerate(self.base):
+            if bv.startswith('a'):
+                fila_idx = i + 1
+                col_idx = self.all_vars.index(bv)
+                factor = self.tabla[0][col_idx]
+                if not self.es_cero(factor):
+                    for j in range(len(self.tabla[0])):
+                        self.tabla[0][j] -= factor * self.tabla[fila_idx][j]
+
+    def resolver(self):
+        self.preparar_tabla_inicial()
+        self.iteraciones.append(self.capturar_iteracion(0))
+        self.ajustar_fila_z()
+        it = 1
+        while it < 30:
+            z_row_coefs = self.tabla[0][:-1]
+            col_p = -1
+            if self.optimizacion == 'max':
+                min_v = -1e-6
+                for j, v in enumerate(z_row_coefs):
+                    if v < min_v: min_v = v; col_p = j
+            else:
+                max_v = 1e-6
+                for j, v in enumerate(z_row_coefs):
+                    if v > max_v: max_v = v; col_p = j
+            if col_p == -1: break
+            fila_p = -1; min_r = float('inf')
+            for i in range(1, len(self.tabla)):
+                if self.tabla[i][col_p] > 1e-9:
+                    r = self.tabla[i][-1] / self.tabla[i][col_p]
+                    if r < min_r: min_r = r; fila_p = i
+            if fila_p == -1: return {"status": "unbounded", "message": "No Acotada", "iteraciones": self.iteraciones}
+            pv = self.tabla[fila_p][col_p]
+            self.tabla[fila_p] = [x / pv for x in self.tabla[fila_p]]
+            for i in range(len(self.tabla)):
+                if i != fila_p:
+                    f = self.tabla[i][col_p]
+                    for j in range(len(self.tabla[0])): self.tabla[i][j] -= f * self.tabla[fila_p][j]
+            self.base[fila_p-1] = self.all_vars[col_p]
+            self.iteraciones.append(self.capturar_iteracion(it))
+            it += 1
+        for i, v in enumerate(self.base):
+            if v.startswith('a') and self.tabla[i+1][-1] > 0.01:
+                return {"status": "infeasible", "message": "Infactible", "iteraciones": self.iteraciones}
+        sol = {v: 0.0 for v in self.variables}
+        for i, v in enumerate(self.base):
+            if v in sol: sol[v] = self.tabla[i+1][-1]
+        return {
+            "status": "success",
+            "z_optimo": round(self.tabla[0][-1], 4),
+            "solucion": {v: round(sol[v], 4) for v in self.variables},
+            "iteraciones": self.iteraciones
+        }
+
+    def capturar_iteracion(self, it_num):
+        tabla_fmt = []
+        for r_idx, r in enumerate(self.tabla):
+            fila_fmt = []
+            for c_idx, val in enumerate(r):
+                v_view = val
+                if r_idx == 0 and c_idx < len(self.all_vars):
+                    var_name = self.all_vars[c_idx]
+                    if var_name.startswith('a') and var_name not in self.base:
+                        if abs(val) > self.M / 10: v_view = 0.0
+                fila_fmt.append(self.formatear_valor(v_view))
+            tabla_fmt.append(fila_fmt)
+        return {"iteracion": it_num, "tabla": tabla_fmt, "base": self.base[:], "variables": self.all_vars[:]}
+
+    def formatear_valor(self, val):
+        if abs(val) < self.tolerancia: return "0"
+        if abs(val) > self.M / 100: return "M" if val > 0 else "-M"
+        if abs(val - round(val)) < 1e-4: return str(int(round(val)))
+        if abs(val - 1/3) < 1e-3: return "1/3"
+        if abs(val - 2/3) < 1e-3: return "2/3"
+        if abs(val - 0.5) < 1e-3: return "0.5"
+        return f"{val:.4f}".rstrip('0').rstrip('.')
+
+def resolver_gran_m_full(tipo, func_obj, restr_str):
+    try:
+        all_vars_found = list(dict.fromkeys(re.findall(r'x(\\d+)', (func_obj + ' ' + restr_str).lower())))
+        if not all_vars_found: return {'error': 'Usa variables como x1, x2, x3...'}
+        num_vars = max(int(v) for v in all_vars_found)
+        vars_list = [f"x{i+1}" for i in range(num_vars)]
+        
+        c = parsear_funcion_objetivo(func_obj, vars_list)
+        A, b, ops = [], [], []
+        
+        for line in restr_str.split('\\n'):
+            if not line.strip(): continue
+            p = parsear_restriccion(line, vars_list)
+            if p:
+                A.append(p['coef'])
+                b.append(p['rhs'])
+                ops.append(p['op'])
+        
+        res = MetodoGranM(c, A, b, ops, tipo).resolver()
+        if res['status'] == 'error': return {'error': res['message']}
+        
+        # Adaptar para el JS
+        return {
+            'status': res['status'],
+            'z': res.get('z_optimo', 0),
+            'solucion': res.get('solucion', {}),
+            'iteraciones': res.get('iteraciones', []),
+            'message': res.get('message', '')
+        }
+    except Exception as e:
+        return {'error': str(e)}
                 `);
                 
                 document.getElementById('loading-overlay').style.display = 'none';
@@ -1169,7 +1426,7 @@ def analisis_sensibilidad_grafico(tipo, func_obj, restr_str):
 
         function showSimplexTable(data) {
             document.getElementById('simplex-table-container').classList.remove('hidden');
-            const vars = data.variables, slack = vars.map((_, i) => 's' + (i+1)), headers = [...vars, ...slack, 'RHS'];
+            const vars = data.variables, slack = vars.map((_, i) => 's' + (i+1)), headers = [...vars, ...slack, 'LD'];
             document.getElementById('simplex-table').innerHTML = '<table class="text-xs"><thead><tr><th>Fila</th>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>' + data.tabla.map((row, i) => '<tr style="' + (i === data.tabla.length - 1 ? 'background: rgba(59, 130, 246, 0.1)' : '') + '"><td style="font-weight: bold;">' + (i === data.tabla.length - 1 ? 'Z' : 'F' + (i+1)) + '</td>' + row.map(val => '<td>' + val + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
             document.getElementById('simplex-sensitivity-btn').classList.remove('hidden');
         }
@@ -1205,8 +1462,8 @@ def analisis_sensibilidad_grafico(tipo, func_obj, restr_str):
             }
             html += '</table></div>';
             
-            // Rangos RHS
-            html += '<div><h4 class="font-semibold mb-2">📈 Rangos de RHS (Lado Derecho)</h4><table class="text-sm" style="width:100%"><tr style="background:var(--bg-secondary)"><th style="padding:8px">Restricción</th><th style="padding:8px">Actual</th><th style="padding:8px" style="color:#ef4444">Mínimo</th><th style="padding:8px" style="color:#22c55e">Máximo</th></tr>';
+            // Rangos LD
+            html += '<div><h4 class="font-semibold mb-2">📈 Rangos del Lado Derecho (LD)</h4><table class="text-sm" style="width:100%"><tr style="background:var(--bg-secondary)"><th style="padding:8px">Restricción</th><th style="padding:8px">Actual</th><th style="padding:8px" style="color:#ef4444">Mínimo</th><th style="padding:8px" style="color:#22c55e">Máximo</th></tr>';
             for (const rr of data.rangos_rhs) {
                 html += '<tr><td style="padding:8px">R' + rr.restriccion + '</td><td style="padding:8px;text-align:center">' + rr.actual.toFixed(4) + '</td><td style="padding:8px;text-align:center;color:#ef4444">' + rr.min.toFixed(4) + '</td><td style="padding:8px;text-align:center;color:#22c55e">' + rr.max.toFixed(4) + '</td></tr>';
             }
@@ -1251,6 +1508,70 @@ def analisis_sensibilidad_grafico(tipo, func_obj, restr_str):
         function showError(containerId, contentId, message) {
             document.getElementById(containerId).classList.remove('hidden');
             document.getElementById(contentId).innerHTML = '<div class="p-4 rounded-lg status-error"><p class="font-bold text-red-600">❌ Error</p><p>' + message + '</p></div>';
+        }
+
+        const granmExamples = [
+            { type: 'max', objective: '3x1 + 5x2', constraints: '1x1 <= 4\n2x2 <= 12\n3x1 + 2x2 = 18' },
+            { type: 'min', objective: '2x1 + 3x2', constraints: '2x1 + x2 >= 8\nx1 + 2x2 >= 8' }
+        ];
+
+        function loadGranMExample(i) {
+            document.getElementById('granm-type').value = granmExamples[i].type;
+            document.getElementById('granm-objective').value = granmExamples[i].objective;
+            document.getElementById('granm-constraints').value = granmExamples[i].constraints;
+        }
+
+        async function solveGranM() {
+            if (!pyodide) { alert('Python aún se está cargando.'); return; }
+            const type = document.getElementById('granm-type').value;
+            const objStr = document.getElementById('granm-objective').value;
+            const constStr = document.getElementById('granm-constraints').value.replace(/\n/g, '\\n');
+            try {
+                const result = await pyodide.runPythonAsync(`json.dumps(resolver_gran_m_full('${type}', '${objStr}', '${constStr}'))`);
+                const data = JSON.parse(result);
+                if (data.error) { showError('granm-result', 'granm-solution', data.error); document.getElementById('granm-steps-container').classList.add('hidden'); return; }
+                showGranMResults(data);
+            } catch (error) { showError('granm-result', 'granm-solution', 'Error: ' + error.message); }
+        }
+
+        function showGranMResults(data) {
+            document.getElementById('granm-result').classList.remove('hidden');
+            const solHtml = data.status === 'success' ? 
+                `<div class="p-4 rounded-lg status-optimal mb-4"><p class="font-bold text-green-600">✅ Solución Óptima Encontrada</p></div>` :
+                `<div class="p-4 rounded-lg status-error mb-4"><p class="font-bold text-red-600">⚠️ ${data.message}</p></div>`;
+            
+            let varsHtml = '<div class="grid grid-cols-2 gap-4 mb-4">';
+            for(const [v, val] of Object.entries(data.solucion || {})) {
+                varsHtml += `<div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">${v}</p><p class="text-xl font-bold">${val}</p></div>`;
+            }
+            varsHtml += `<div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">Z óptimo</p><p class="text-xl font-bold text-green-600">${data.z || 0}</p></div></div>`;
+            
+            document.getElementById('granm-solution').innerHTML = solHtml + varsHtml;
+            
+            // Show steps
+            document.getElementById('granm-steps-container').classList.remove('hidden');
+            let stepsHtml = '';
+            data.iteraciones.forEach((it, idx) => {
+                const headers = [...it.variables, 'LD'];
+                stepsHtml += `
+                    <div class="border-t border-blue-500/30 pt-4">
+                        <h4 class="font-bold text-blue-400 mb-2">Iteración ${it.iteracion} ${idx === 0 ? '(Tabla Inicial)' : ''}</h4>
+                        <div class="overflow-x-auto">
+                            <table class="text-xs">
+                                <thead><tr><th>Base</th>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                                <tbody>
+                                    ${it.tabla.map((row, rIdx) => `
+                                        <tr class="${rIdx === 0 ? 'bg-blue-500/10 font-bold' : ''}">
+                                            <td class="font-bold">${rIdx === 0 ? 'Z' : it.base[rIdx-1]}</td>
+                                            ${row.map(val => `<td>${val}</td>`).join('')}
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>`;
+            });
+            document.getElementById('granm-steps').innerHTML = stepsHtml;
         }
 
         showPage('dashboard');
