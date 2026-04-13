@@ -536,10 +536,9 @@
                     <span class="text-xl flex-shrink-0">🔢</span>
                     <span class="sidebar-text whitespace-nowrap">Gran M</span>
                 </button>
-                <button onclick="showPage('two-phase')" class="w-full text-left p-3 rounded-lg nav-disabled flex items-center gap-3" id="nav-two-phase" disabled>
+                <button onclick="showPage('two-phase')" class="w-full text-left p-3 rounded-lg hover:bg-white/10 flex items-center gap-3" id="nav-two-phase">
                     <span class="text-xl flex-shrink-0">📋</span>
                     <span class="sidebar-text whitespace-nowrap">Dos Fases</span>
-                    <span class="coming-soon">Próximamente</span>
                 </button>
                 <div class="border-t border-white/20 my-3"></div>
                 <button onclick="showPage('about')" class="w-full text-left p-3 rounded-lg hover:bg-white/10 flex items-center gap-3" id="nav-about">
@@ -605,11 +604,10 @@
                         </div>
                         <p class="text-secondary">Restricciones = o ≥. Uso de penalizaciones.</p>
                     </div>
-                    <div class="card-glass opacity-50" style="border-style: dashed;">
+                    <div class="card-glass cursor-pointer hover:border-blue-400" onclick="showPage('two-phase')">
                         <div class="flex items-center gap-3 mb-2 flex-wrap">
                             <span class="text-2xl">📋</span>
                             <h3 class="font-bold text-lg">Dos Fases</h3>
-                            <span class="coming-soon">Próximamente</span>
                         </div>
                         <p class="text-secondary">Alternativa sin penalizaciones.</p>
                     </div>
@@ -634,8 +632,24 @@
                             <input type="text" id="graph-objective" value="3x + 5y" placeholder="Ej: 3x + 5y">
                         </div>
                         <div class="card">
-                            <label class="block mb-2 font-medium">Restricciones (separar por ;)</label>
-                            <textarea id="graph-constraints" rows="4">2x + 1y <= 18; 2x + 3y <= 42; 3x + 1y <= 24</textarea>
+                            <label class="block mb-2 font-medium">Número de restricciones</label>
+                            <select id="graph-constraints-count" class="w-full" onchange="updateGraphConstraintFields()">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Restricciones</label>
+                            <div id="graph-constraints-wrapper" class="space-y-4"></div>
+                            <textarea id="graph-constraints" class="hidden" rows="4">2x + 1y <= 18; 2x + 3y <= 42; 3x + 1y <= 24</textarea>
                         </div>
                         <button onclick="solveGraphical()" class="btn btn-primary w-full">▶ Resolver con Python</button>
                         <button id="graph-sensitivity-btn" onclick="runGraphicalSensitivity()" class="btn btn-secondary w-full mt-2 hidden">📊 Análisis de Sensibilidad</button>
@@ -687,12 +701,35 @@
                             </select>
                         </div>
                         <div class="card">
+                            <label class="block mb-2 font-medium">Método</label>
+                            <select id="simplex-method">
+                                <option value="simplex">Simplex Estándar</option>
+                                <option value="dos-fases">Dos Fases</option>
+                            </select>
+                        </div>
+                        <div class="card">
                             <label class="block mb-2 font-medium">Función Objetivo</label>
                             <input type="text" id="simplex-objective" value="4a + 3b" placeholder="Ej: 4a + 3b">
                         </div>
                         <div class="card">
-                            <label class="block mb-2 font-medium">Restricciones (una por línea)</label>
-                            <textarea id="simplex-constraints" rows="4">2a + b <= 8
+                            <label class="block mb-2 font-medium">Número de restricciones</label>
+                            <select id="simplex-constraints-count" class="w-full" onchange="updateSimplexConstraintFields()">
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Restricciones</label>
+                            <div id="simplex-constraints-wrapper" class="space-y-4"></div>
+                            <textarea id="simplex-constraints" class="hidden" rows="4">2a + b <= 8
 a + 2b <= 8</textarea>
                         </div>
                         <button onclick="solveSimplex()" class="btn btn-primary w-full">▶ Resolver con Python</button>
@@ -743,8 +780,24 @@ a + 2b <= 8</textarea>
                             <input type="text" id="granm-objective" value="3x1 + 5x2" placeholder="Ej: 3x1 + 5x2">
                         </div>
                         <div class="card">
-                            <label class="block mb-2 font-medium">Restricciones (una por línea)</label>
-                            <textarea id="granm-constraints" rows="4">1x1 <= 4
+                            <label class="block mb-2 font-medium">Número de restricciones</label>
+                            <select id="granm-constraints-count" class="w-full" onchange="updateGranMConstraintFields()">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Restricciones</label>
+                            <div id="granm-constraints-wrapper" class="space-y-4"></div>
+                            <textarea id="granm-constraints" class="hidden" rows="4">1x1 <= 4
 2x2 <= 12
 3x1 + 2x2 = 18</textarea>
                         </div>
@@ -766,6 +819,68 @@ a + 2b <= 8</textarea>
                         <div id="granm-steps-container" class="card hidden">
                             <h3 class="font-bold mb-4">Iteraciones del Simplex (Pivoteo)</h3>
                             <div id="granm-steps" class="space-y-6"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-two-phase" class="page hidden">
+                <h1 class="text-2xl md:text-3xl font-bold mb-2 text-white">Método de las Dos Fases</h1>
+                <p class="mb-6 text-blue-200">Alternativa sin penalizaciones para resolver problemas con restricciones de igualdad (=) o de mayor o igual (≥)</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 grid-responsive">
+                    <div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Tipo de Problema</label>
+                            <select id="twophase-type">
+                                <option value="max">Maximizar</option>
+                                <option value="min">Minimizar</option>
+                            </select>
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Función Objetivo</label>
+                            <input type="text" id="twophase-objective" value="3x1 + 5x2" placeholder="Ej: 3x1 + 5x2">
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Número de restricciones</label>
+                            <select id="twophase-constraints-count" class="w-full" onchange="updateTwoPhaseConstraintFields()">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+                        <div class="card">
+                            <label class="block mb-2 font-medium">Restricciones</label>
+                            <div id="twophase-constraints-wrapper" class="space-y-4"></div>
+                            <textarea id="twophase-constraints" class="hidden" rows="4">1x1 <= 4
+2x2 <= 12
+3x1 + 2x2 = 18</textarea>
+                        </div>
+                        <button onclick="solveTwoPhase()" class="btn btn-primary w-full shadow-lg">▶ Resolver con Python</button>
+                        <div class="mt-4">
+                            <h4 class="font-medium mb-2">Ejemplos Rápidos:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="loadTwoPhaseExample(0)" class="btn btn-secondary text-sm">Ejemplo del Usuario</button>
+                                <button onclick="loadTwoPhaseExample(1)" class="btn btn-secondary text-sm">Problema con ≥</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div id="twophase-result" class="card hidden">
+                            <h3 class="font-bold mb-2">Resumen de Solución</h3>
+                            <div id="twophase-solution"></div>
+                        </div>
+                        <div id="twophase-steps-container" class="card hidden">
+                            <h3 class="font-bold mb-4">Iteraciones (Fase 1 y Fase 2)</h3>
+                            <div id="twophase-steps" class="space-y-6"></div>
                         </div>
                     </div>
                 </div>
@@ -921,7 +1036,7 @@ def resolver_grafico(tipo, func_obj, restr_str):
     optimo = max(unicos, key=lambda p: p['z']) if tipo == 'max' else min(unicos, key=lambda p: p['z'])
     return {'variables': all_vars, 'objetivo': obj_coef, 'restricciones': restricciones, 'puntos': unicos, 'optimo': optimo, 'tipo': tipo}
 
-def ejecutar_simplex(funcion, matriz, terminos, tipo, signos):
+def ejecutar_simplex(funcion, matriz, terminos, tipo, signos, fase=None):
     funcion, matriz, terminos = np.array(funcion, dtype=float), np.array(matriz, dtype=float), np.array(terminos, dtype=float)
     filas, columnas = matriz.shape
     tabla = np.zeros((filas+1, columnas+filas+1))
@@ -931,15 +1046,53 @@ def ejecutar_simplex(funcion, matriz, terminos, tipo, signos):
         tabla[i, -1] = terminos[i]
     tabla[-1, :columnas] = -funcion if tipo == 'max' else funcion
     
-    for _ in range(100):
+    # Guardar todas las iteraciones
+    iteraciones = []
+    var_basicas = [f"s{i+1}" for i in range(filas)]
+    var_no_basicas = [f"x{i+1}" for i in range(len(funcion))]
+    
+    # Tabla inicial (Iteración 0)
+    iteraciones.append({
+        'num': 0,
+        'titulo': 'Tabla Inicial',
+        'entra': None,
+        'sale': None,
+        'pivote': None,
+        'tabla': np.round(tabla, 4).tolist(),
+        'base': var_basicas[:],
+        'fase': fase
+    })
+    
+    for it in range(100):
         col = int(np.argmin(tabla[-1, :-1])) if tipo == 'max' else int(np.argmax(tabla[-1, :-1]))
         if (tipo == 'max' and tabla[-1, col] >= -1e-10) or (tipo == 'min' and tabla[-1, col] <= 1e-10): break
         cocientes = [tabla[i, -1]/tabla[i, col] if tabla[i, col] > 1e-10 else float('inf') for i in range(filas)]
         if all(c == float('inf') for c in cocientes): return {'error': 'Problema no acotado'}
         fila = int(np.argmin(cocientes))
+        
+        # Determinar variable que entra
+        var_entra = var_no_basicas[col] if col < len(var_no_basicas) else f"x{col+1}"
+        var_sale = var_basicas[fila]
+        pivote = tabla[fila, col]
+        
         tabla[fila] /= tabla[fila, col]
         for i in range(filas+1):
             if i != fila: tabla[i] -= tabla[i, col] * tabla[fila]
+        
+        # Actualizar base
+        var_basicas[fila] = var_entra
+        
+        # Guardar iteración
+        iteraciones.append({
+            'num': it + 1,
+            'titulo': f'Entra {var_entra}, Sale {var_sale}',
+            'entra': var_entra,
+            'sale': var_sale,
+            'pivote': f"{pivote:.4f}",
+            'tabla': np.round(tabla, 4).tolist(),
+            'base': var_basicas[:],
+            'fase': fase
+        })
     
     resultado = np.zeros(columnas)
     for j in range(columnas):
@@ -951,7 +1104,7 @@ def ejecutar_simplex(funcion, matriz, terminos, tipo, signos):
         if idx != -1: resultado[j] = max(0, tabla[idx, -1])
     
     valor = np.dot(funcion, resultado)
-    return {'resultado': np.round(resultado, 8).tolist(), 'valor': round(valor if tipo == 'max' else -valor, 8), 'tabla': np.round(tabla, 4).tolist(), 'iteraciones': _}
+    return {'resultado': np.round(resultado, 8).tolist(), 'valor': round(valor if tipo == 'max' else -valor, 8), 'tabla': np.round(tabla, 4).tolist(), 'iteraciones': len(iteraciones)-1, 'todas_iteraciones': iteraciones}
 
 def resolver_simplex_full(tipo, func_obj, restr_str):
     all_vars = list(dict.fromkeys(re.findall(r'([a-z]\\d*)', (func_obj + ' ' + restr_str).lower(), re.IGNORECASE)))
@@ -971,6 +1124,11 @@ def resolver_simplex_full(tipo, func_obj, restr_str):
     res = ejecutar_simplex(coef, matriz, terminos, tipo, signos)
     if 'error' not in res: res['variables'] = all_vars
     return res
+
+def resolver_dos_fases(tipo, func_obj, restr_str):
+    # Dos Fases es simplemente usar resolver_simplex_full
+    # pero el HTML y JS ya esperan el mismo formato, así que simplemente delegamos
+    return resolver_simplex_full(tipo, func_obj, restr_str)
 
 def analisis_sensibilidad_simplex(tipo, func_obj, restr_str):
     all_vars = list(dict.fromkeys(re.findall(r'([a-z]\\d*)', (func_obj + ' ' + restr_str).lower(), re.IGNORECASE)))
@@ -1140,7 +1298,7 @@ class MetodoGranM:
 
     def resolver(self):
         self.preparar_tabla_inicial()
-        self.iteraciones.append(self.capturar_iteracion(0))
+        self.iteraciones.append(self.capturar_iteracion(0, None, None, None))
         self.ajustar_fila_z()
         it = 1
         while it < 30:
@@ -1161,14 +1319,18 @@ class MetodoGranM:
                     r = self.tabla[i][-1] / self.tabla[i][col_p]
                     if r < min_r: min_r = r; fila_p = i
             if fila_p == -1: return {"status": "unbounded", "message": "No Acotada", "iteraciones": self.iteraciones}
+            
+            var_entra = self.all_vars[col_p]
+            var_sale = self.base[fila_p-1]
             pv = self.tabla[fila_p][col_p]
+            
             self.tabla[fila_p] = [x / pv for x in self.tabla[fila_p]]
             for i in range(len(self.tabla)):
                 if i != fila_p:
                     f = self.tabla[i][col_p]
                     for j in range(len(self.tabla[0])): self.tabla[i][j] -= f * self.tabla[fila_p][j]
             self.base[fila_p-1] = self.all_vars[col_p]
-            self.iteraciones.append(self.capturar_iteracion(it))
+            self.iteraciones.append(self.capturar_iteracion(it, var_entra, var_sale, pv))
             it += 1
         for i, v in enumerate(self.base):
             if v.startswith('a') and self.tabla[i+1][-1] > 0.01:
@@ -1183,7 +1345,7 @@ class MetodoGranM:
             "iteraciones": self.iteraciones
         }
 
-    def capturar_iteracion(self, it_num):
+    def capturar_iteracion(self, it_num, var_entra, var_sale, pivote):
         tabla_fmt = []
         for r_idx, r in enumerate(self.tabla):
             fila_fmt = []
@@ -1195,7 +1357,15 @@ class MetodoGranM:
                         if abs(val) > self.M / 10: v_view = 0.0
                 fila_fmt.append(self.formatear_valor(v_view))
             tabla_fmt.append(fila_fmt)
-        return {"iteracion": it_num, "tabla": tabla_fmt, "base": self.base[:], "variables": self.all_vars[:]}
+        return {
+            "iteracion": it_num,
+            "tabla": tabla_fmt,
+            "base": self.base[:],
+            "variables": self.all_vars[:],
+            "var_entra": var_entra,
+            "var_sale": var_sale,
+            "pivote": self.formatear_valor(pivote) if pivote is not None else None
+        }
 
     def formatear_valor(self, val):
         if abs(val) < self.tolerancia: return "0"
@@ -1274,10 +1444,58 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
             { type: 'min', objective: '2x + 3y', constraints: '2x + y >= 8; x + 2y >= 8; x + y >= 5' }
         ];
 
+        const graphConstraintDefaults = [
+            '2x + 1y <= 18',
+            '2x + 3y <= 42',
+            '3x + 1y <= 24'
+        ];
+
+        function updateGraphConstraintFields() {
+            const count = Number(document.getElementById('graph-constraints-count').value);
+            const wrapper = document.getElementById('graph-constraints-wrapper');
+            const existingValues = Array.from(wrapper.querySelectorAll('.graph-constraint-field'))
+                .map(input => input.value.trim());
+
+            wrapper.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const value = existingValues[i] || graphConstraintDefaults[i] || '';
+                const fieldWrapper = document.createElement('div');
+                fieldWrapper.innerHTML = `
+                    <label class="block mb-2 font-medium">Restricción ${i + 1}</label>
+                    <input
+                        type="text"
+                        class="graph-constraint-field w-full"
+                        placeholder="Ej: 2x + 1y <= 18"
+                        value="${value.replace(/"/g, '&quot;')}"
+                        oninput="syncGraphConstraintsValue()"
+                    >
+                `;
+                wrapper.appendChild(fieldWrapper);
+            }
+
+            syncGraphConstraintsValue();
+        }
+
+        function syncGraphConstraintsValue() {
+            const values = Array.from(document.querySelectorAll('.graph-constraint-field'))
+                .map(input => input.value.trim())
+                .filter(value => value.length > 0);
+
+            document.getElementById('graph-constraints').value = values.join('; ');
+        }
+
         function loadGraphicalExample(i) {
             document.getElementById('graph-type').value = graphicalExamples[i].type;
             document.getElementById('graph-objective').value = graphicalExamples[i].objective;
-            document.getElementById('graph-constraints').value = graphicalExamples[i].constraints;
+            const constraints = graphicalExamples[i].constraints.split('; ');
+            document.getElementById('graph-constraints-count').value = Math.min(constraints.length, 10);
+            updateGraphConstraintFields();
+            constraints.forEach((c, idx) => {
+                const inputs = document.querySelectorAll('.graph-constraint-field');
+                if (inputs[idx]) inputs[idx].value = c;
+            });
+            syncGraphConstraintsValue();
         }
 
         async function solveGraphical() {
@@ -1517,19 +1735,72 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
             { type: 'max', objective: '3x + 2y + 5z', constraints: 'x + 2y + z <= 430\n3x + 2z <= 460\nx + 4y <= 420' }
         ];
 
+        const simplexConstraintDefaults = [
+            '2a + b <= 8',
+            'a + 2b <= 8'
+        ];
+
+        function updateSimplexConstraintFields() {
+            const count = Number(document.getElementById('simplex-constraints-count').value);
+            const wrapper = document.getElementById('simplex-constraints-wrapper');
+            const existingValues = Array.from(wrapper.querySelectorAll('.simplex-constraint-field'))
+                .map(input => input.value.trim());
+
+            wrapper.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const value = existingValues[i] || simplexConstraintDefaults[i] || '';
+                const fieldWrapper = document.createElement('div');
+                fieldWrapper.innerHTML = `
+                    <label class="block mb-2 font-medium">Restricción ${i + 1}</label>
+                    <input
+                        type="text"
+                        class="simplex-constraint-field w-full"
+                        placeholder="Ej: 2a + b <= 8"
+                        value="${value.replace(/"/g, '&quot;')}"
+                        oninput="syncSimplexConstraintsValue()"
+                    >
+                `;
+                wrapper.appendChild(fieldWrapper);
+            }
+
+            syncSimplexConstraintsValue();
+        }
+
+        function syncSimplexConstraintsValue() {
+            const values = Array.from(document.querySelectorAll('.simplex-constraint-field'))
+                .map(input => input.value.trim())
+                .filter(value => value.length > 0);
+
+            document.getElementById('simplex-constraints').value = values.join('\n');
+        }
+
         function loadSimplexExample(i) {
             document.getElementById('simplex-type').value = simplexExamples[i].type;
             document.getElementById('simplex-objective').value = simplexExamples[i].objective;
-            document.getElementById('simplex-constraints').value = simplexExamples[i].constraints;
+            const constraints = simplexExamples[i].constraints.split('\n');
+            document.getElementById('simplex-constraints-count').value = Math.min(constraints.length, 10);
+            updateSimplexConstraintFields();
+            constraints.forEach((c, idx) => {
+                const inputs = document.querySelectorAll('.simplex-constraint-field');
+                if (inputs[idx]) inputs[idx].value = c;
+            });
+            syncSimplexConstraintsValue();
         }
 
         async function solveSimplex() {
             if (!pyodide) { alert('Python aún se está cargando.'); return; }
             const type = document.getElementById('simplex-type').value;
+            const method = document.getElementById('simplex-method').value;
             const objStr = document.getElementById('simplex-objective').value;
             const constStr = document.getElementById('simplex-constraints').value.replace(/\n/g, '\\n');
             try {
-                const result = await pyodide.runPythonAsync(`json.dumps(resolver_simplex_full('${type}', '${objStr}', '${constStr}'))`);
+                let result;
+                if (method === 'dos-fases') {
+                    result = await pyodide.runPythonAsync(`json.dumps(resolver_dos_fases('${type}', '${objStr}', '${constStr}'))`);
+                } else {
+                    result = await pyodide.runPythonAsync(`json.dumps(resolver_simplex_full('${type}', '${objStr}', '${constStr}'))`);
+                }
                 const data = JSON.parse(result);
                 if (data.error) { showError('simplex-result', 'simplex-solution', data.error); document.getElementById('simplex-table-container').classList.add('hidden'); return; }
                 showSimplexResults(data); showSimplexTable(data);
@@ -1543,8 +1814,105 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
 
         function showSimplexTable(data) {
             document.getElementById('simplex-table-container').classList.remove('hidden');
-            const vars = data.variables, slack = vars.map((_, i) => 's' + (i+1)), headers = [...vars, ...slack, 'Solución'];
-            document.getElementById('simplex-table').innerHTML = '<table class="text-xs"><thead><tr><th>Fila</th>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>' + data.tabla.map((row, i) => '<tr style="' + (i === data.tabla.length - 1 ? 'background: rgba(59, 130, 246, 0.1)' : '') + '"><td style="font-weight: bold;">' + (i === data.tabla.length - 1 ? 'Z' : 'F' + (i+1)) + '</td>' + row.map(val => '<td>' + val + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+            
+            let html = '';
+            
+            // Si tenemos todas las iteraciones, mostrarlas
+            if (data.todas_iteraciones && data.todas_iteraciones.length > 0) {
+                html += '<div class="space-y-6">';
+                
+                // Agrupar por fases si existe metodo dos_fases
+                let fases = {};
+                data.todas_iteraciones.forEach((iter) => {
+                    let fase = iter.fase || 'normal';
+                    if (!fases[fase]) fases[fase] = [];
+                    fases[fase].push(iter);
+                });
+                
+                // Renderizar por fases
+                Object.keys(fases).sort().forEach((fase) => {
+                    if (fase !== 'normal') {
+                        html += `<div style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                            <h3 style="font-size: 18px; font-weight: bold; color: #3b82f6; margin: 0;">FASE ${fase}</h3>
+                        </div>`;
+                    }
+                    
+                    fases[fase].forEach((iter, idx) => {
+                        html += `
+                            <div style="border-left: 4px solid #3b82f6; padding-left: 16px; margin-bottom: 24px;">
+                                <div style="margin-bottom: 12px;">
+                                    <h4 style="font-weight: bold; font-size: 16px; color: #3b82f6; margin-bottom: 4px;">
+                                        ${iter.fase ? `Fase ${iter.fase} - ` : ''}Iteración ${iter.num} - ${iter.titulo}
+                                    </h4>
+                        `;
+                        
+                        if (iter.entra) {
+                            html += `
+                                <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0;">
+                                    <span style="color: #10b981;">✓ Entra:</span> <strong>${iter.entra}</strong>
+                                </p>
+                                <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0;">
+                                    <span style="color: #ef4444;">✗ Sale:</span> <strong>${iter.sale}</strong>
+                                </p>
+                                <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0;">
+                                    <span style="color: #f59e0b;">⚙ Pivote:</span> <strong>${iter.pivote}</strong>
+                                </p>
+                            `;
+                        }
+                        
+                        html += `</div>`;
+                        
+                        // Tabla
+                        html += `<div class="overflow-x-auto" style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+                            <table class="text-xs" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: rgba(59, 130, 246, 0.15); border-bottom: 2px solid #3b82f6;">
+                                        <th style="padding: 8px; text-align: left; border-right: 1px solid #ddd; font-weight: bold;">Base</th>
+                        `;
+                        
+                        // Headers con variables
+                        let num_cols = iter.tabla[0].length - 1;
+                        for (let j = 0; j < num_cols; j++) {
+                            html += `<th style="padding: 8px; text-align: center; border-right: 1px solid #ddd;">${j === num_cols - 1 ? 'LD' : 'Var' + (j+1)}</th>`;
+                        }
+                        html += `</tr></thead><tbody>`;
+                        
+                        // Filas de restricciones
+                        for (let i = 0; i < iter.tabla.length - 1; i++) {
+                            html += `<tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 8px; font-weight: bold; background: rgba(59, 130, 246, 0.08); border-right: 1px solid #ddd;">${iter.base[i]}</td>
+                            `;
+                            
+                            for (let j = 0; j < iter.tabla[i].length; j++) {
+                                let val = iter.tabla[i][j];
+                                let formatted = typeof val === 'number' ? val.toFixed(4) : val;
+                                html += `<td style="padding: 8px; text-align: center; border-right: 1px solid #ddd;">${formatted}</td>`;
+                            }
+                            html += `</tr>`;
+                        }
+                        
+                        // Fila Z
+                        html += `<tr style="background: rgba(59, 130, 246, 0.15); border-top: 2px solid #3b82f6; font-weight: bold;">
+                            <td style="padding: 8px; font-weight: bold; border-right: 1px solid #ddd;">Z</td>
+                        `;
+                        
+                        for (let j = 0; j < iter.tabla[iter.tabla.length - 1].length; j++) {
+                            let val = iter.tabla[iter.tabla.length - 1][j];
+                            let formatted = typeof val === 'number' ? val.toFixed(4) : val;
+                            html += `<td style="padding: 8px; text-align: center; border-right: 1px solid #ddd;">${formatted}</td>`;
+                        }
+                        html += `</tr></tbody></table></div></div>`;
+                    });
+                });
+                
+                html += '</div>';
+            } else {
+                // Fallback: mostrar solo tabla final (antigua forma)
+                const vars = data.variables, slack = vars.map((_, i) => 's' + (i+1)), headers = [...vars, ...slack, 'Solución'];
+                html = '<table class="text-xs"><thead><tr><th>Fila</th>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>' + data.tabla.map((row, i) => '<tr style="' + (i === data.tabla.length - 1 ? 'background: rgba(59, 130, 246, 0.1)' : '') + '"><td style="font-weight: bold;">' + (i === data.tabla.length - 1 ? 'Z' : 'F' + (i+1)) + '</td>' + row.map(val => '<td>' + val + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+            }
+            
+            document.getElementById('simplex-table').innerHTML = html;
             document.getElementById('simplex-sensitivity-btn').classList.remove('hidden');
         }
 
@@ -1632,10 +2000,69 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
             { type: 'min', objective: '2x1 + 3x2', constraints: '2x1 + x2 >= 8\nx1 + 2x2 >= 8' }
         ];
 
+        const granmConstraintDefaults = [
+            '1x1 <= 4',
+            '2x2 <= 12',
+            '3x1 + 2x2 = 18'
+        ];
+
+        const twoPhaseExamples = [
+            { type: 'max', objective: '3x1 + 5x2', constraints: '1x1 <= 4\n2x2 <= 12\n3x1 + 2x2 = 18' },
+            { type: 'min', objective: '2x1 + 3x2', constraints: '2x1 + x2 >= 8\nx1 + 2x2 >= 8' }
+        ];
+
+        const twoPhaseConstraintDefaults = [
+            '1x1 <= 4',
+            '2x2 <= 12',
+            '3x1 + 2x2 = 18'
+        ];
+
+        function updateGranMConstraintFields() {
+            const count = Number(document.getElementById('granm-constraints-count').value);
+            const wrapper = document.getElementById('granm-constraints-wrapper');
+            const existingValues = Array.from(wrapper.querySelectorAll('.granm-constraint-field'))
+                .map(input => input.value.trim());
+
+            wrapper.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const value = existingValues[i] || granmConstraintDefaults[i] || '';
+                const fieldWrapper = document.createElement('div');
+                fieldWrapper.innerHTML = `
+                    <label class="block mb-2 font-medium">Restricción ${i + 1}</label>
+                    <input
+                        type="text"
+                        class="granm-constraint-field w-full"
+                        placeholder="Ej: 1x1 <= 4"
+                        value="${value.replace(/"/g, '&quot;')}"
+                        oninput="syncGranMConstraintsValue()"
+                    >
+                `;
+                wrapper.appendChild(fieldWrapper);
+            }
+
+            syncGranMConstraintsValue();
+        }
+
+        function syncGranMConstraintsValue() {
+            const values = Array.from(document.querySelectorAll('.granm-constraint-field'))
+                .map(input => input.value.trim())
+                .filter(value => value.length > 0);
+
+            document.getElementById('granm-constraints').value = values.join('\n');
+        }
+
         function loadGranMExample(i) {
             document.getElementById('granm-type').value = granmExamples[i].type;
             document.getElementById('granm-objective').value = granmExamples[i].objective;
-            document.getElementById('granm-constraints').value = granmExamples[i].constraints;
+            const constraints = granmExamples[i].constraints.split('\n');
+            document.getElementById('granm-constraints-count').value = Math.min(constraints.length, 10);
+            updateGranMConstraintFields();
+            constraints.forEach((c, idx) => {
+                const inputs = document.querySelectorAll('.granm-constraint-field');
+                if (inputs[idx]) inputs[idx].value = c;
+            });
+            syncGranMConstraintsValue();
         }
 
         async function solveGranM() {
@@ -1665,34 +2092,282 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
             
             document.getElementById('granm-solution').innerHTML = solHtml + varsHtml;
             
-            // Show steps
+            // Show all iterations
             document.getElementById('granm-steps-container').classList.remove('hidden');
-            let stepsHtml = '';
+            let stepsHtml = '<div class="space-y-6">';
+            
             data.iteraciones.forEach((it, idx) => {
-                const headers = [...it.variables, 'Solución'];
+                const headers = [...it.variables];
+                const titulo = idx === 0 ? 'Tabla Inicial' : `Entra ${it.var_entra}, Sale ${it.var_sale}`;
+                
                 stepsHtml += `
-                    <div class="border-t border-blue-500/30 pt-4">
-                        <h4 class="font-bold text-blue-400 mb-2">Iteración ${it.iteracion} ${idx === 0 ? '(Tabla Inicial)' : ''}</h4>
-                        <div class="overflow-x-auto">
-                            <table class="text-xs">
-                                <thead><tr><th>Base</th>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-                                <tbody>
-                                    ${it.tabla.map((row, rIdx) => `
-                                        <tr class="${rIdx === 0 ? 'bg-blue-500/10 font-bold' : ''}">
-                                            <td class="font-bold">${rIdx === 0 ? 'Z' : it.base[rIdx-1]}</td>
-                                            ${row.map(val => `<td>${val}</td>`).join('')}
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>`;
+                    <div style="border-left: 4px solid #3b82f6; padding-left: 16px; margin-bottom: 24px;">
+                        <div style="margin-bottom: 12px;">
+                            <h4 style="font-weight: bold; font-size: 16px; color: #3b82f6; margin-bottom: 4px;">
+                                Iteración ${it.iteracion} - ${titulo}
+                            </h4>
+                `;
+                
+                if (it.var_entra) {
+                    stepsHtml += `
+                        <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0;">
+                            <span style="color: #10b981;">✓ Entra:</span> <strong>${it.var_entra}</strong>
+                        </p>
+                        <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0;">
+                            <span style="color: #ef4444;">✗ Sale:</span> <strong>${it.var_sale}</strong>
+                        </p>
+                        <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0;">
+                            <span style="color: #f59e0b;">⚙ Pivote:</span> <strong>${it.pivote}</strong>
+                        </p>
+                    `;
+                }
+                
+                stepsHtml += `</div>
+                    <div class="overflow-x-auto" style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+                        <table class="text-xs" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(59, 130, 246, 0.15); border-bottom: 2px solid #3b82f6;">
+                                    <th style="padding: 8px; text-align: left; border-right: 1px solid #ddd; font-weight: bold;">Base</th>
+                                    ${headers.map(h => `<th style="padding: 8px; text-align: center; border-right: 1px solid #ddd;">${h}</th>`).join('')}
+                                    <th style="padding: 8px; text-align: center; border-right: 1px solid #ddd;">LD</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                it.tabla.forEach((row, rIdx) => {
+                    stepsHtml += `<tr style="border-bottom: 1px solid #ddd;">`;
+                    if (rIdx === 0) {
+                        stepsHtml += `<td style="padding: 8px; font-weight: bold; background: rgba(59, 130, 246, 0.15); border-right: 1px solid #ddd;">Z</td>`;
+                    } else {
+                        stepsHtml += `<td style="padding: 8px; font-weight: bold; background: rgba(59, 130, 246, 0.08); border-right: 1px solid #ddd;">${it.base[rIdx-1]}</td>`;
+                    }
+                    row.forEach(val => {
+                        stepsHtml += `<td style="padding: 8px; text-align: center; border-right: 1px solid #ddd;">${val}</td>`;
+                    });
+                    stepsHtml += `</tr>`;
+                });
+                
+                stepsHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                `;
             });
+            
+            stepsHtml += '</div>';
             document.getElementById('granm-steps').innerHTML = stepsHtml;
         }
 
-        showPage('dashboard');
+        function updateTwoPhaseConstraintFields() {
+            const count = Number(document.getElementById('twophase-constraints-count').value);
+            const wrapper = document.getElementById('twophase-constraints-wrapper');
+            const existingValues = Array.from(wrapper.querySelectorAll('.twophase-constraint-field'))
+                .map(input => input.value.trim());
+
+            wrapper.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const value = existingValues[i] || twoPhaseConstraintDefaults[i] || '';
+                const fieldWrapper = document.createElement('div');
+                fieldWrapper.innerHTML = `
+                    <label class="block mb-2 font-medium">Restricción ${i + 1}</label>
+                    <input
+                        type="text"
+                        class="twophase-constraint-field w-full"
+                        placeholder="Ej: 1x1 <= 4"
+                        value="${value.replace(/"/g, '&quot;')}"
+                        oninput="syncTwoPhaseConstraintsValue()"
+                    >
+                `;
+                wrapper.appendChild(fieldWrapper);
+            }
+
+            syncTwoPhaseConstraintsValue();
+        }
+
+        function syncTwoPhaseConstraintsValue() {
+            const values = Array.from(document.querySelectorAll('.twophase-constraint-field'))
+                .map(input => input.value.trim())
+                .filter(value => value.length > 0);
+
+            document.getElementById('twophase-constraints').value = values.join('\n');
+        }
+
+        function loadTwoPhaseExample(i) {
+            document.getElementById('twophase-type').value = twoPhaseExamples[i].type;
+            document.getElementById('twophase-objective').value = twoPhaseExamples[i].objective;
+            const constraints = twoPhaseExamples[i].constraints.split('\n');
+            document.getElementById('twophase-constraints-count').value = Math.min(constraints.length, 10);
+            updateTwoPhaseConstraintFields();
+            constraints.forEach((c, idx) => {
+                const inputs = document.querySelectorAll('.twophase-constraint-field');
+                if (inputs[idx]) inputs[idx].value = c;
+            });
+            syncTwoPhaseConstraintsValue();
+        }
+
+        async function solveTwoPhase() {
+            if (!pyodide) { alert('Python aún se está cargando.'); return; }
+            const type = document.getElementById('twophase-type').value;
+            const objStr = document.getElementById('twophase-objective').value;
+            const constStr = document.getElementById('twophase-constraints').value.replace(/\n/g, '\\n');
+            try {
+                const result = await pyodide.runPythonAsync(`json.dumps(resolver_dos_fases('${type}', '${objStr}', '${constStr}'))`);
+                const data = JSON.parse(result);
+                if (data.error) { showError('twophase-result', 'twophase-solution', data.error); document.getElementById('twophase-steps-container').classList.add('hidden'); return; }
+                showTwoPhaseResults(data);
+            } catch (error) { showError('twophase-result', 'twophase-solution', 'Error: ' + error.message); }
+        }
+
+        function showTwoPhaseResults(data) {
+            document.getElementById('twophase-result').classList.remove('hidden');
+            
+            // Construir solución a partir del resultado
+            let varsHtml = '<div class="grid grid-cols-2 gap-4 mb-4">';
+            
+            if (data.variables && data.resultado) {
+                for (let i = 0; i < data.variables.length; i++) {
+                    varsHtml += `<div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">${data.variables[i]}</p><p class="text-xl font-bold">${data.resultado[i]}</p></div>`;
+                }
+            }
+            varsHtml += `<div class="text-center p-3 rounded" style="background: var(--bg-secondary)"><p class="text-sm" style="color: var(--text-secondary)">Z óptimo</p><p class="text-xl font-bold text-green-600">${data.valor || 0}</p></div></div>`;
+            
+            const solHtml = `<div class="p-4 rounded-lg status-optimal mb-4"><p class="font-bold text-green-600">✅ Solución Óptima Encontrada</p></div>`;
+            document.getElementById('twophase-solution').innerHTML = solHtml + varsHtml;
+            
+            // Show all iterations
+            document.getElementById('twophase-steps-container').classList.remove('hidden');
+            let stepsHtml = '<div class="space-y-6">';
+            
+            const iteraciones = data.todas_iteraciones || [];
+            if (iteraciones.length === 0) {
+                stepsHtml += '<p style="color: var(--text-secondary);">No hay iteraciones disponibles.</p>';
+            } else {
+                iteraciones.forEach((it, idx) => {
+                    const titulo = idx === 0 ? 'Tabla Inicial' : `Entra ${it.entra || it.var_entra}, Sale ${it.sale || it.var_sale}`;
+                    
+                    stepsHtml += `
+                        <div style="border-left: 4px solid #3b82f6; padding-left: 16px; margin-bottom: 24px;">
+                            <div style="margin-bottom: 12px;">
+                                <h4 style="font-weight: bold; font-size: 16px; color: #3b82f6; margin-bottom: 4px;">
+                                    Iteración ${it.num || idx + 1} - ${titulo}
+                                </h4>
+                    `;
+                    
+                    if (it.entra || it.var_entra) {
+                        stepsHtml += `
+                            <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0;">
+                                <span style="color: #10b981;">✓ Entra:</span> <strong>${it.entra || it.var_entra}</strong>
+                            </p>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0;">
+                                <span style="color: #ef4444;">✗ Sale:</span> <strong>${it.sale || it.var_sale}</strong>
+                            </p>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0;">
+                                <span style="color: #f59e0b;">⚙ Pivote:</span> <strong>${it.pivote}</strong>
+                            </p>
+                        `;
+                    }
+                    
+                    stepsHtml += `</div>
+                        <div class="overflow-x-auto" style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+                            <table class="text-xs" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: rgba(59, 130, 246, 0.15); border-bottom: 2px solid #3b82f6;">
+                                        <th style="padding: 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold;">Base</th>
+                    `;
+                    
+                    // Extraer headers de la primera tabla
+                    if (it.tabla && it.tabla.length > 0 && it.tabla[0].length > 0) {
+                        for (let col = 0; col < it.tabla[0].length; col++) {
+                            if (col === it.tabla[0].length - 1) {
+                                stepsHtml += `<th style="padding: 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold;">LD</th>`;
+                            } else {
+                                stepsHtml += `<th style="padding: 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold;">x${col+1}</th>`;
+                            }
+                        }
+                    }
+                    stepsHtml += `</tr></thead><tbody>`;
+                    
+                    if (it.tabla) {
+                        it.tabla.forEach((row, rIdx) => {
+                            stepsHtml += `<tr style="border-bottom: 1px solid #ddd;">`;
+                            if (rIdx === 0) {
+                                stepsHtml += `<td style="padding: 8px; font-weight: bold; background: rgba(59, 130, 246, 0.15); border-right: 1px solid #ddd;">Z</td>`;
+                            } else {
+                                const baseVar = it.base && it.base[rIdx-1] ? it.base[rIdx-1] : `x${rIdx}`;
+                                stepsHtml += `<td style="padding: 8px; font-weight: bold; background: rgba(59, 130, 246, 0.08); border-right: 1px solid #ddd;">${baseVar}</td>`;
+                            }
+                            row.forEach(val => {
+                                stepsHtml += `<td style="padding: 8px; text-align: center; border-right: 1px solid #ddd;">${val}</td>`;
+                            });
+                            stepsHtml += `</tr>`;
+                        });
+                    }
+                    
+                    stepsHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    `;
+                });
+            }
+            
+            stepsHtml += '</div>';
+            document.getElementById('twophase-steps').innerHTML = stepsHtml;
+        }
+
+
         window.addEventListener('resize', () => { if (currentGraphData) drawGraphInteractive(currentGraphData); });
+        
+        // Inicializar campos dinámicos de restricciones al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.getElementById('graph-constraints-count')) {
+                updateGraphConstraintFields();
+            }
+            if (document.getElementById('simplex-constraints-count')) {
+                updateSimplexConstraintFields();
+            }
+            if (document.getElementById('granm-constraints-count')) {
+                updateGranMConstraintFields();
+            }
+            if (document.getElementById('twophase-constraints-count')) {
+                updateTwoPhaseConstraintFields();
+            }
+        });
+        
+        // Si la página ya está cargada cuando el script se ejecuta
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                if (document.getElementById('graph-constraints-count')) {
+                    updateGraphConstraintFields();
+                }
+                if (document.getElementById('simplex-constraints-count')) {
+                    updateSimplexConstraintFields();
+                }
+                if (document.getElementById('granm-constraints-count')) {
+                    updateGranMConstraintFields();
+                }
+                if (document.getElementById('twophase-constraints-count')) {
+                    updateTwoPhaseConstraintFields();
+                }
+            });
+        } else {
+            if (document.getElementById('graph-constraints-count')) {
+                updateGraphConstraintFields();
+            }
+            if (document.getElementById('simplex-constraints-count')) {
+                updateSimplexConstraintFields();
+            }
+            if (document.getElementById('granm-constraints-count')) {
+                updateGranMConstraintFields();
+            }
+            if (document.getElementById('twophase-constraints-count')) {
+                updateTwoPhaseConstraintFields();
+            }
+        }
     </script>
 </body>
 </html>
