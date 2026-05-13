@@ -3,9 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Calculadora interactiva de Programación Lineal con múltiples métodos de resolución.">
     <title>Simplex PL - Calculadora de Programación Lineal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    
+    <!-- Preconnect a CDNs para mejorar velocidad -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    
+    <!-- KaTeX para renderizado de ecuaciones -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" defer></script>
+    
+    <!-- Pyodide (Python en el navegador) - Cargado de forma lazy en initPyodide() -->
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -388,7 +401,8 @@
             top: 0; left: 70px; right: 0; bottom: 0;
             z-index: -1;
             overflow: hidden;
-            background: linear-gradient(180deg, #000000 0%, #0a0a1e 20%, #0f172a 50%, #1e293b 100%);
+            background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 20%, #e2e8f0 50%, #cbd5e1 100%);
+            transition: background 0.3s ease;
         }
         .dark .dashboard-bg {
             background: linear-gradient(180deg, #000000 0%, #0a0a1e 20%, #0f172a 50%, #1e293b 100%);
@@ -487,6 +501,103 @@
             box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
         }
         .card-glass .text-secondary { color: rgba(148, 163, 184, 0.9); }
+        
+        /* Estilos para secciones teóricas editables */
+        .teoria-section {
+            transition: all 0.3s ease;
+        }
+        
+        .teoria-section .flex {
+            transition: all 0.2s ease;
+        }
+        
+        .teoria-section #teoria-content {
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 500px;
+            }
+        }
+        
+        #teoria-grafico-content h3,
+        #teoria-simplex-content h3,
+        #teoria-granm-content h3,
+        #teoria-dosfases-content h3 {
+            color: var(--primary-blue);
+            margin-top: 16px;
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+        }
+        
+        #teoria-grafico-content h4,
+        #teoria-simplex-content h4,
+        #teoria-granm-content h4,
+        #teoria-dosfases-content h4 {
+            color: var(--text-primary);
+            margin-top: 12px;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        
+        #teoria-grafico-content p,
+        #teoria-simplex-content p,
+        #teoria-granm-content p,
+        #teoria-dosfases-content p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin: 8px 0;
+        }
+        
+        #teoria-grafico-content ol,
+        #teoria-simplex-content ol,
+        #teoria-granm-content ol,
+        #teoria-dosfases-content ol,
+        #teoria-grafico-content ul,
+        #teoria-simplex-content ul,
+        #teoria-granm-content ul,
+        #teoria-dosfases-content ul {
+            margin: 8px 0;
+            padding-left: 24px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+        
+        #teoria-grafico-content li,
+        #teoria-simplex-content li,
+        #teoria-granm-content li,
+        #teoria-dosfases-content li {
+            margin: 4px 0;
+        }
+        
+        .teoria-section textarea {
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            transition: all 0.2s ease;
+        }
+        
+        .teoria-section textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue) !important;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-sm {
+            font-size: 0.875rem !important;
+            padding: 6px 12px !important;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-sm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -541,9 +652,15 @@
                     <span class="sidebar-text whitespace-nowrap">Dos Fases</span>
                 </button>
                 <div class="border-t border-white/20 my-3"></div>
+                <button class="w-full text-left p-3 rounded-lg opacity-50 cursor-not-allowed flex items-center gap-3" disabled>
+                    <span class="text-xl flex-shrink-0">📐</span>
+                    <span class="sidebar-text whitespace-nowrap">Ecuaciones</span>
+                    <span class="ml-auto text-xs bg-yellow-600/50 px-2 py-1 rounded">Proximamente</span>
+                </button>
+                <div class="border-t border-white/20 my-3"></div>
                 <button onclick="showPage('about')" class="w-full text-left p-3 rounded-lg hover:bg-white/10 flex items-center gap-3" id="nav-about">
                     <span class="text-xl flex-shrink-0">ℹ️</span>
-                    <span class="sidebar-text whitespace-nowrap">Acerca de</span>
+                    <span class="sidebar-text whitespace-nowrap">Terminología</span>
                 </button>
             </nav>
         </div>
@@ -561,21 +678,24 @@
             </div>
 
             <div id="page-dashboard" class="page">
-                <h1 class="text-2xl md:text-3xl font-bold mb-2 text-white">Bienvenido a Simplex PL</h1>
-                <p class="mb-6 md:mb-8 text-blue-200">Calculadora en Python para programación lineal</p>
+                <h1 class="text-2xl md:text-3xl font-bold mb-2" style="color: var(--text-primary);">Bienvenido a Simplex PL</h1>
+                <p class="mb-6 md:mb-8" style="color: var(--text-secondary);">Calculadora en Python para programación lineal</p>
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 md:mb-8">
-                    <div class="card-glass">
-                        <div class="text-sm text-secondary">Variables</div>
-                        <div class="text-2xl font-bold">n variables</div>
+                <div class="card mb-6 md:mb-8" style="border-left: 4px solid #3b82f6;">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleTeoria('acerca')">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <span id="teoria-acerca-icon">▼</span>
+                            🎯 Acerca de Simplex PL
+                        </h2>
+                        <button class="btn btn-secondary btn-sm" id="edit-btn-acerca" onclick="toggleEditMode('acerca', event)" style="display: none; font-size: 0.85rem; padding: 4px 8px; background-color: #1f2937; color: white; border-color: #1f2937;">✏️ Editar</button>
                     </div>
-                    <div class="card-glass">
-                        <div class="text-sm text-secondary">Restricciones</div>
-                        <div class="text-2xl font-bold">m restricciones</div>
-                    </div>
-                    <div class="card-glass">
-                        <div class="text-sm text-secondary">Tipo</div>
-                        <div class="text-2xl font-bold">Max / Min</div>
+                    <div id="teoria-acerca-content" class="mt-4" style="max-height: 500px; overflow-y: auto;"></div>
+                    <div id="teoria-acerca-edit" class="hidden mt-4">
+                        <textarea id="teoria-acerca-textarea" class="w-full p-3 border rounded" style="min-height: 300px; background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-color);"></textarea>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="saveTeoria('acerca')" class="btn btn-primary">💾 Guardar</button>
+                            <button onclick="toggleEditMode('acerca')" class="btn btn-secondary">✕ Cancelar</button>
+                        </div>
                     </div>
                 </div>
 
@@ -618,6 +738,25 @@
                 <h1 class="text-2xl md:text-3xl font-bold mb-2">Método Gráfico</h1>
                 <p class="mb-6" style="color: var(--text-secondary)">2 variables - Haz clic en los puntos para ver información</p>
 
+                <!-- Sección Teórica Colapsable -->
+                <div class="card mb-6" style="border-left: 4px solid #3b82f6;">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleTeoria('grafico')">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <span id="teoria-grafico-icon">▼</span>
+                            Fundamentos Teóricos
+                        </h2>
+                        <button class="btn btn-secondary btn-sm" id="edit-btn-grafico" onclick="toggleEditMode('grafico', event)" style="display: none; font-size: 0.85rem; padding: 4px 8px;">✏️ Editar</button>
+                    </div>
+                    <div id="teoria-grafico-content" class="mt-4" style="max-height: 500px; overflow-y: auto;"></div>
+                    <div id="teoria-grafico-edit" class="hidden mt-4">
+                        <textarea id="teoria-grafico-textarea" class="w-full p-3 border rounded" style="min-height: 300px; background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-color);"></textarea>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="saveTeoria('grafico')" class="btn btn-primary">💾 Guardar</button>
+                            <button onclick="toggleEditMode('grafico')" class="btn btn-secondary">✕ Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 grid-responsive">
                     <div>
                         <div class="card">
@@ -629,14 +768,14 @@
                         </div>
                         <div class="card">
                             <label class="block mb-2 font-medium">Función Objetivo</label>
-                            <input type="text" id="graph-objective" value="3x + 5y" placeholder="Ej: 3x + 5y">
+                            <input type="text" id="graph-objective" value="3x + 2y" placeholder="Ej: 3x + 2y">
                         </div>
                         <div class="card">
                             <label class="block mb-2 font-medium">Número de restricciones</label>
                             <select id="graph-constraints-count" class="w-full" onchange="updateGraphConstraintFields()">
                                 <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3" selected>3</option>
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
                                 <option value="4">4</option>
                                 <option value="5">5</option>
                                 <option value="6">6</option>
@@ -649,7 +788,7 @@
                         <div class="card">
                             <label class="block mb-2 font-medium">Restricciones</label>
                             <div id="graph-constraints-wrapper" class="space-y-4"></div>
-                            <textarea id="graph-constraints" class="hidden" rows="4">2x + 1y <= 18; 2x + 3y <= 42; 3x + 1y <= 24</textarea>
+                            <textarea id="graph-constraints" class="hidden" rows="4">x + y <= 4; 2x + y <= 5</textarea>
                         </div>
                         <button onclick="solveGraphical()" class="btn btn-primary w-full">▶ Resolver con Python</button>
                         <button id="graph-sensitivity-btn" onclick="runGraphicalSensitivity()" class="btn btn-secondary w-full mt-2 hidden">📊 Análisis de Sensibilidad</button>
@@ -690,6 +829,25 @@
             <div id="page-simplex" class="page hidden">
                 <h1 class="text-2xl md:text-3xl font-bold mb-2">Método Simplex</h1>
                 <p class="mb-6" style="color: var(--text-secondary)">Múltiples variables</p>
+
+                <!-- Sección Teórica Colapsable -->
+                <div class="card mb-6" style="border-left: 4px solid #3b82f6;">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleTeoria('simplex')">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <span id="teoria-simplex-icon">▼</span>
+                            📚 Fundamentales Teóricos
+                        </h2>
+                        <button class="btn btn-secondary btn-sm" id="edit-btn-simplex" onclick="toggleEditMode('simplex', event)" style="display: none; font-size: 0.85rem; padding: 4px 8px;">✏️ Editar</button>
+                    </div>
+                    <div id="teoria-simplex-content" class="mt-4" style="max-height: 500px; overflow-y: auto;"></div>
+                    <div id="teoria-simplex-edit" class="hidden mt-4">
+                        <textarea id="teoria-simplex-textarea" class="w-full p-3 border rounded" style="min-height: 300px; background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-color);"></textarea>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="saveTeoria('simplex')" class="btn btn-primary">💾 Guardar</button>
+                            <button onclick="toggleEditMode('simplex')" class="btn btn-secondary">✕ Cancelar</button>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 grid-responsive">
                     <div>
@@ -763,8 +921,27 @@ a + 2b <= 8</textarea>
             </div>
 
             <div id="page-gran-m" class="page hidden">
-                <h1 class="text-2xl md:text-3xl font-bold mb-2 text-white">Método de la Gran M</h1>
-                <p class="mb-6 text-blue-200">Ideal para problemas con restricciones de igualdad (=) o de mayor o igual (≥)</p>
+                <h1 class="text-2xl md:text-3xl font-bold mb-2">Método de la Gran M</h1>
+                <p class="mb-6" style="color: var(--text-secondary)">Ideal para problemas con restricciones de igualdad (=) o de mayor o igual (≥)</p>
+
+                <!-- Sección Teórica Colapsable -->
+                <div class="card mb-6" style="border-left: 4px solid #3b82f6;">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleTeoria('granm')">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <span id="teoria-granm-icon">▼</span>
+                            📚 Fundamentales Teóricos
+                        </h2>
+                        <button class="btn btn-secondary btn-sm" id="edit-btn-granm" onclick="toggleEditMode('granm', event)" style="display: none; font-size: 0.85rem; padding: 4px 8px;">✏️ Editar</button>
+                    </div>
+                    <div id="teoria-granm-content" class="mt-4" style="max-height: 500px; overflow-y: auto;"></div>
+                    <div id="teoria-granm-edit" class="hidden mt-4">
+                        <textarea id="teoria-granm-textarea" class="w-full p-3 border rounded" style="min-height: 300px; background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-color);"></textarea>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="saveTeoria('granm')" class="btn btn-primary">💾 Guardar</button>
+                            <button onclick="toggleEditMode('granm')" class="btn btn-secondary">✕ Cancelar</button>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 grid-responsive">
                     <div>
@@ -777,7 +954,7 @@ a + 2b <= 8</textarea>
                         </div>
                         <div class="card">
                             <label class="block mb-2 font-medium">Función Objetivo</label>
-                            <input type="text" id="granm-objective" value="3x1 + 5x2" placeholder="Ej: 3x1 + 5x2">
+                            <input type="text" id="granm-objective" value="3x1 + 2x2" placeholder="Ej: 3x1 + 2x2">
                         </div>
                         <div class="card">
                             <label class="block mb-2 font-medium">Número de restricciones</label>
@@ -797,9 +974,9 @@ a + 2b <= 8</textarea>
                         <div class="card">
                             <label class="block mb-2 font-medium">Restricciones</label>
                             <div id="granm-constraints-wrapper" class="space-y-4"></div>
-                            <textarea id="granm-constraints" class="hidden" rows="4">1x1 <= 4
-2x2 <= 12
-3x1 + 2x2 = 18</textarea>
+                            <textarea id="granm-constraints" class="hidden" rows="4">2x1 + x2 <= 18
+2x1 + 3x2 >= 24
+x1 + x2 = 10</textarea>
                         </div>
                         <button onclick="solveGranM()" class="btn btn-primary w-full shadow-lg">▶ Resolver con Python</button>
                         <div class="mt-4">
@@ -825,8 +1002,27 @@ a + 2b <= 8</textarea>
             </div>
 
             <div id="page-two-phase" class="page hidden">
-                <h1 class="text-2xl md:text-3xl font-bold mb-2 text-white">Método de las Dos Fases</h1>
-                <p class="mb-6 text-blue-200">Alternativa sin penalizaciones para resolver problemas con restricciones de igualdad (=) o de mayor o igual (≥)</p>
+                <h1 class="text-2xl md:text-3xl font-bold mb-2">Método de las Dos Fases</h1>
+                <p class="mb-6" style="color: var(--text-secondary)">Alternativa sin penalizaciones para resolver problemas con restricciones de igualdad (=) o de mayor o igual (≥)</p>
+
+                <!-- Sección Teórica Colapsable -->
+                <div class="card mb-6" style="border-left: 4px solid #3b82f6;">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleTeoria('dosfases')">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <span id="teoria-dosfases-icon">▼</span>
+                            📚 Fundamentales Teóricos
+                        </h2>
+                        <button class="btn btn-secondary btn-sm" id="edit-btn-dosfases" onclick="toggleEditMode('dosfases', event)" style="display: none; font-size: 0.85rem; padding: 4px 8px;">✏️ Editar</button>
+                    </div>
+                    <div id="teoria-dosfases-content" class="mt-4" style="max-height: 500px; overflow-y: auto;"></div>
+                    <div id="teoria-dosfases-edit" class="hidden mt-4">
+                        <textarea id="teoria-dosfases-textarea" class="w-full p-3 border rounded" style="min-height: 300px; background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-color);"></textarea>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="saveTeoria('dosfases')" class="btn btn-primary">💾 Guardar</button>
+                            <button onclick="toggleEditMode('dosfases')" class="btn btn-secondary">✕ Cancelar</button>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 grid-responsive">
                     <div>
@@ -839,7 +1035,7 @@ a + 2b <= 8</textarea>
                         </div>
                         <div class="card">
                             <label class="block mb-2 font-medium">Función Objetivo</label>
-                            <input type="text" id="twophase-objective" value="3x1 + 5x2" placeholder="Ej: 3x1 + 5x2">
+                            <input type="text" id="twophase-objective" value="3x1 + 2x2" placeholder="Ej: 3x1 + 2x2">
                         </div>
                         <div class="card">
                             <label class="block mb-2 font-medium">Número de restricciones</label>
@@ -859,9 +1055,9 @@ a + 2b <= 8</textarea>
                         <div class="card">
                             <label class="block mb-2 font-medium">Restricciones</label>
                             <div id="twophase-constraints-wrapper" class="space-y-4"></div>
-                            <textarea id="twophase-constraints" class="hidden" rows="4">1x1 <= 4
-2x2 <= 12
-3x1 + 2x2 = 18</textarea>
+                            <textarea id="twophase-constraints" class="hidden" rows="4">2x1 + x2 <= 18
+2x1 + 3x2 >= 24
+x1 + x2 = 10</textarea>
                         </div>
                         <button onclick="solveTwoPhase()" class="btn btn-primary w-full shadow-lg">▶ Resolver con Python</button>
                         <div class="mt-4">
@@ -887,63 +1083,26 @@ a + 2b <= 8</textarea>
             </div>
 
             <div id="page-about" class="page hidden">
-                <h1 class="text-2xl md:text-3xl font-bold mb-2">Acerca de</h1>
-                <p class="mb-6" style="color: var(--text-secondary)">Información del proyecto y guía de terminología</p>
+                <h1 class="text-2xl md:text-3xl font-bold mb-2">Terminología</h1>
+                <p class="mb-6" style="color: var(--text-secondary)">Definiciones clave utilizadas en los métodos de programación lineal</p>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="card">
-                        <h3 class="font-bold mb-4 flex items-center gap-2">
-                            <span class="text-blue-500">📘</span> Terminología General
-                        </h3>
-                        <div class="space-y-4 text-sm" style="color: var(--text-secondary)">
-                            <div>
-                                <span class="font-bold text-white">LD (Lado Derecho):</span> 
-                                Representa las constantes o límites de las restricciones (anteriormente conocido como RHS). Es el valor que limita el uso de recursos.
-                            </div>
-                            <div>
-                                <span class="font-bold text-white">Variables x₁, x₂...:</span> 
-                                Variables de decisión que representan las cantidades a calcular.
-                            </div>
-                            <div>
-                                <span class="font-bold text-white">Z:</span> 
-                                Representa la Función Objetivo, el valor total que se busca maximizar o minimizar.
-                            </div>
+                <!-- Sección Teórica Colapsable -->
+                <div class="card mb-6" style="border-left: 4px solid #3b82f6;">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleTeoria('terminologia')">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <span id="teoria-terminologia-icon">▼</span>
+                            📚 Términos y Definiciones
+                        </h2>
+                        <button class="btn btn-secondary btn-sm" id="edit-btn-terminologia" onclick="toggleEditMode('terminologia', event)" style="display: none; font-size: 0.85rem; padding: 4px 8px;">✏️ Editar</button>
+                    </div>
+                    <div id="teoria-terminologia-content" class="mt-4" style="max-height: 500px; overflow-y: auto;"></div>
+                    <div id="teoria-terminologia-edit" class="hidden mt-4">
+                        <textarea id="teoria-terminologia-textarea" class="w-full p-3 border rounded" style="min-height: 300px; background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-color);"></textarea>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="saveTeoria('terminologia')" class="btn btn-primary">💾 Guardar</button>
+                            <button onclick="toggleEditMode('terminologia')" class="btn btn-secondary">✕ Cancelar</button>
                         </div>
                     </div>
-
-                    <div class="card">
-                        <h3 class="font-bold mb-4 flex items-center gap-2">
-                            <span class="text-blue-500">🔢</span> Simplex y Gran M
-                        </h3>
-                        <div class="space-y-4 text-sm" style="color: var(--text-secondary)">
-                            <div>
-                                <span class="font-bold text-white">Variables de Holgura (sᵢ):</span> 
-                                Utilizadas en restricciones "menor o igual" (≤). Representan la cantidad de recurso no utilizado.
-                            </div>
-                            <div>
-                                <span class="font-bold text-white">Variables de Exceso (eᵢ):</span> 
-                                Utilizadas en restricciones "mayor o igual" (≥). Representan la cantidad que excede el mínimo requerido.
-                            </div>
-                            <div>
-                                <span class="font-bold text-white">Variables Artificiales (aᵢ):</span> 
-                                Variables matemáticas auxiliares necesarias para iniciar el algoritmo en restricciones de igualdad o exceso.
-                            </div>
-                            <div>
-                                <span class="font-bold text-white">Penalización M:</span> 
-                                Un número extremadamente grande asignado a las variables artificiales para forzarlas a salir de la solución final.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mt-6">
-                    <h3 class="font-bold mb-2">Simplex PL - Python + HTML</h3>
-                    <p class="mb-4" style="color: var(--text-secondary)">Calculadora avanzada de programación lineal habilitada por Pyodide.</p>
-                    <ul class="list-disc list-inside space-y-1" style="color: var(--text-secondary)">
-                        <li>Panel interactivo con soporte para múltiples métodos.</li>
-                        <li>Análisis de sensibilidad detallado y gráfico interactivo.</li>
-                        <li>Formatos numéricos de alta precisión (fracciones y decimales).</li>
-                    </ul>
                 </div>
             </div>
         </div>
@@ -951,11 +1110,11 @@ a + 2b <= 8</textarea>
     
     <div class="dashboard-bg" id="dashboard-bg">
         <div class="dashboard-mountains">
-            <svg viewBox="0 0 1440 400" preserveAspectRatio="none" style="width: 100%; height: 100%;">
-                <path fill="#0f172a" fill-opacity="0.5" d="M0,350 L80,280 L160,320 L280,220 L400,300 L520,180 L640,260 L760,160 L880,240 L1000,140 L1120,220 L1260,170 L1380,230 L1440,280 L1440,400 L0,400 Z"></path>
-                <path fill="#1e293b" fill-opacity="0.6" d="M0,360 L100,300 L200,340 L320,260 L440,320 L560,220 L680,290 L800,210 L920,280 L1040,190 L1160,260 L1300,220 L1440,300 L1440,400 L0,400 Z"></path>
-                <path fill="#1e3a5f" fill-opacity="0.4" d="M0,380 L120,330 L240,360 L360,300 L480,350 L600,280 L720,340 L840,290 L960,340 L1080,280 L1200,330 L1320,310 L1440,350 L1440,400 L0,400 Z"></path>
-                <path fill="#0f172a" d="M0,390 L90,360 L180,380 L300,340 L420,370 L540,330 L660,365 L780,340 L900,360 L1020,335 L1140,360 L1260,345 L1380,365 L1440,380 L1440,400 L0,400 Z"></path>
+            <svg id="dashboard-mountains-svg" viewBox="0 0 1440 400" preserveAspectRatio="none" style="width: 100%; height: 100%;">
+                <path id="mountain-1" fill-opacity="0.5" d="M0,350 L80,280 L160,320 L280,220 L400,300 L520,180 L640,260 L760,160 L880,240 L1000,140 L1120,220 L1260,170 L1380,230 L1440,280 L1440,400 L0,400 Z"></path>
+                <path id="mountain-2" fill-opacity="0.6" d="M0,360 L100,300 L200,340 L320,260 L440,320 L560,220 L680,290 L800,210 L920,280 L1040,190 L1160,260 L1300,220 L1440,300 L1440,400 L0,400 Z"></path>
+                <path id="mountain-3" fill-opacity="0.4" d="M0,380 L120,330 L240,360 L360,300 L480,350 L600,280 L720,340 L840,290 L960,340 L1080,280 L1200,330 L1320,310 L1440,350 L1440,400 L0,400 Z"></path>
+                <path id="mountain-4" fill-opacity="1" d="M0,390 L90,360 L180,380 L300,340 L420,370 L540,330 L660,365 L780,340 L900,360 L1020,335 L1140,360 L1260,345 L1380,365 L1440,380 L1440,400 L0,400 Z"></path>
             </svg>
         </div>
     </div>
@@ -1415,16 +1574,63 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
             }
         }
 
-        initPyodide();
+// Cargar Pyodide de forma lazy cuando el usuario lo necesite
+        let pyodideInitialized = false;
+        async function ensurePyodide() {
+            if (pyodideInitialized) return;
+            if (!window.pyodideScript) {
+                window.pyodideScript = document.createElement('script');
+                window.pyodideScript.src = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
+                document.head.appendChild(window.pyodideScript);
+                await new Promise(resolve => window.pyodideScript.onload = resolve);
+            }
+            pyodideInitialized = true;
+            await initPyodide();
+        }
+        
+        // Inicializar Pyodide en background (no bloquea UI)
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (!pyodideInitialized && !window.pyodideLoading) {
+                    window.pyodideLoading = true;
+                    ensurePyodide().catch(e => console.log('Pyodide cargar cuando sea necesario'));
+                }
+            }, 2000);
+        });
+
+// Función para actualizar colores de montañas en dashboard
+        function updateMountainColors() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const m1 = document.getElementById('mountain-1');
+            const m2 = document.getElementById('mountain-2');
+            const m3 = document.getElementById('mountain-3');
+            const m4 = document.getElementById('mountain-4');
+            
+            if (isDark) {
+                m1.setAttribute('fill', '#0f172a');
+                m2.setAttribute('fill', '#1e293b');
+                m3.setAttribute('fill', '#1e3a5f');
+                m4.setAttribute('fill', '#0f172a');
+            } else {
+                m1.setAttribute('fill', '#cbd5e1');
+                m2.setAttribute('fill', '#94a3b8');
+                m3.setAttribute('fill', '#64748b');
+                m4.setAttribute('fill', '#475569');
+            }
+        }
 
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            updateMountainColors();
         }
         
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         }
+        
+        // Aplicar colores iniciales de montañas
+        updateMountainColors();
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('collapsed');
@@ -1439,15 +1645,14 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
         }
 
         const graphicalExamples = [
-            { type: 'max', objective: '3x + 5y', constraints: 'x <= 4; 2y <= 12; 3x + 2y = 18' },
+            { type: 'max', objective: '3x + 2y', constraints: 'x + y <= 4; 2x + y <= 5' },
             { type: 'max', objective: '3x + 5y', constraints: '2x + 1y <= 18; 2x + 3y <= 42; 3x + 1y <= 24' },
             { type: 'min', objective: '2x + 3y', constraints: '2x + y >= 8; x + 2y >= 8; x + y >= 5' }
         ];
 
         const graphConstraintDefaults = [
-            '2x + 1y <= 18',
-            '2x + 3y <= 42',
-            '3x + 1y <= 24'
+            'x + y <= 4',
+            '2x + y <= 5'
         ];
 
         function updateGraphConstraintFields() {
@@ -1996,25 +2201,25 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
         }
 
         const granmExamples = [
-            { type: 'max', objective: '3x1 + 5x2', constraints: '1x1 <= 4\n2x2 <= 12\n3x1 + 2x2 = 18' },
+            { type: 'max', objective: '3x1 + 2x2', constraints: '2x1 + x2 <= 18\n2x1 + 3x2 >= 24\nx1 + x2 = 10' },
             { type: 'min', objective: '2x1 + 3x2', constraints: '2x1 + x2 >= 8\nx1 + 2x2 >= 8' }
         ];
 
         const granmConstraintDefaults = [
-            '1x1 <= 4',
-            '2x2 <= 12',
-            '3x1 + 2x2 = 18'
+            '2x1 + x2 <= 18',
+            '2x1 + 3x2 >= 24',
+            'x1 + x2 = 10'
         ];
 
         const twoPhaseExamples = [
-            { type: 'max', objective: '3x1 + 5x2', constraints: '1x1 <= 4\n2x2 <= 12\n3x1 + 2x2 = 18' },
+            { type: 'max', objective: '3x1 + 2x2', constraints: '2x1 + x2 <= 18\n2x1 + 3x2 >= 24\nx1 + x2 = 10' },
             { type: 'min', objective: '2x1 + 3x2', constraints: '2x1 + x2 >= 8\nx1 + 2x2 >= 8' }
         ];
 
         const twoPhaseConstraintDefaults = [
-            '1x1 <= 4',
-            '2x2 <= 12',
-            '3x1 + 2x2 = 18'
+            '2x1 + x2 <= 18',
+            '2x1 + 3x2 >= 24',
+            'x1 + x2 = 10'
         ];
 
         function updateGranMConstraintFields() {
@@ -2319,11 +2524,678 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
             document.getElementById('twophase-steps').innerHTML = stepsHtml;
         }
 
+        // ==================== FUNCIONES PARA TEORÍA EDITABLE ====================
+        
+        // Contenidos por defecto para cada método
+        const defaultTheories = {
+            grafico: `<h3>Fundamentos del Método Gráfico</h3>
+
+<h4>Introducción</h4>
+<p>El <strong>método gráfico</strong> es una técnica de solución para problemas de Programación Lineal (PL) que involucran <strong>únicamente dos variables de decisión</strong>. Aunque su aplicabilidad es limitada (la mayoría de los problemas reales tienen decenas o cientos de variables), constituye una herramienta pedagógica inigualable porque permite visualizar conceptos clave:</p>
+<ul>
+<li>La región factible como un polígono convexo.</li>
+<li>Los vértices como posibles soluciones óptimas.</li>
+<li>El comportamiento de la función objetivo mediante rectas de nivel.</li>
+<li>Casos especiales como soluciones múltiples, problemas no acotados e infactibilidad.</li>
+</ul>
+
+<h4>Descripción del Método</h4>
+<p>Consideremos un problema de maximización con dos variables:</p>
+<p>$$\\begin{aligned} \\text{Maximizar} \\quad & z = c_1x_1 + c_2x_2 \\\\ \\text{sujeto a} \\quad & a_{i1}x_1 + a_{i2}x_2 \\leq b_i, \\quad i=1,\\ldots,m \\\\ & x_1, x_2 \\geq 0. \\end{aligned}$$</p>
+
+<p>Los pasos del método gráfico son:</p>
+<ol>
+<li><strong>Dibujar las rectas asociadas a cada restricción.</strong> Convertir cada desigualdad en igualdad y graficar la recta. El área que satisface la desigualdad se indica mediante sombreado. Las restricciones $x_1\\geq0$, $x_2\\geq0$ limitan el dibujo al primer cuadrante.</li>
+<li><strong>Determinar la región factible.</strong> Es la intersección de todos los semiplanos definidos por las restricciones. Debe ser un conjunto convexo (polígono) si el problema está bien planteado.</li>
+<li><strong>Representar la función objetivo.</strong> Se dibujan <em>rectas de nivel</em> de la forma $c_1x_1+c_2x_2 = k$ para distintos valores de $k$. La dirección de máximo crecimiento viene dada por el vector gradiente $(c_1,c_2)$.</li>
+<li><strong>Encontrar el óptimo.</strong> Desplazar la recta de nivel en la dirección de mejora (para maximización, en el sentido del gradiente) hasta el último punto de contacto con la región factible.</li>
+<li><strong>Calcular las coordenadas exactas.</strong> Si el óptimo es un vértice, se resuelve el sistema formado por las dos restricciones que se intersectan en él. Luego se evalúa la función objetivo.</li>
+</ol>
+
+<h4>Ejemplo Canónico</h4>
+<p>Consideremos el siguiente problema:</p>
+<p>$$\\begin{aligned} \\text{Maximizar} \\quad & z = 3x_1 + 2x_2 \\\\ \\text{sujeto a} \\quad & x_1 + x_2 \\leq 4, \\\\ & 2x_1 + x_2 \\leq 5, \\\\ & x_1, x_2 \\geq 0. \\end{aligned}$$</p>
+
+<h5><strong>Construcción de la Región Factible</strong></h5>
+<ul>
+<li><strong>Recta 1:</strong> $x_1 + x_2 = 4$ pasa por los puntos $(4,0)$ y $(0,4)$. La desigualdad $\\leq$ indica el semiplano que contiene al origen.</li>
+<li><strong>Recta 2:</strong> $2x_1 + x_2 = 5$ pasa por los puntos $(2.5,0)$ y $(0,5)$. El semiplano que contiene al origen.</li>
+<li><strong>Ejes coordenados:</strong> $x_1\\geq0$, $x_2\\geq0$ (primer cuadrante).</li>
+</ul>
+
+<p>La intersección de estos semiplanos produce un polígono convexo con vértices: $(0,0)$, $(2.5,0)$, la intersección de las dos rectas, y $(0,4)$.</p>
+
+<h5><strong>Análisis de la Función Objetivo</strong></h5>
+<p><strong>Vector gradiente:</strong> $(3,2)$. Las rectas de nivel son $3x_1+2x_2 = k$. Al desplazar la recta en la dirección $(3,2)$ el valor de $z$ aumenta. El último punto de la región factible que toca la recta de nivel es la intersección de las dos restricciones:</p>
+
+<p>$$\\begin{cases} x_1 + x_2 = 4 \\\\ 2x_1 + x_2 = 5 \\end{cases} \\Rightarrow \\text{restando: } x_1=1, \\quad x_2=3$$</p>
+
+<p><strong>Valor óptimo:</strong> $z = 3(1)+2(3)=9$.</p>
+
+<h4>Casos Especiales</h4>
+
+<h5><strong>Múltiples Soluciones Óptimas</strong></h5>
+<p>Si la recta de nivel de la función objetivo es paralela a uno de los lados de la región factible, entonces todos los puntos de ese lado son óptimos. Ejemplo: si la función fuese $z = 2x_1 + 2x_2$, la recta $2x_1+2x_2=k$ es paralela a $x_1+x_2=4$. El máximo se alcanzaría en todo el segmento entre los vértices donde esa restricción es activa.</p>
+
+<h5><strong>Problema No Acotado</strong></h5>
+<p>Ocurre cuando se puede desplazar la recta de nivel indefinidamente en la dirección de mejora sin abandonar la región factible. Gráficamente, la región factible no está cerrada en esa dirección.</p>
+
+<p>Ejemplo:</p>
+<p>$$\\begin{aligned} \\text{Maximizar} \\quad & z = x_1 + x_2 \\\\ \\text{sujeto a} \\quad & x_1 - x_2 \\leq 1, \\\\ & x_1, x_2 \\geq 0. \\end{aligned}$$</p>
+
+<p>La región se extiende ilimitadamente hacia arriba a la derecha, y la función puede crecer sin cota.</p>
+
+<h5><strong>Problema Infactible</strong></h5>
+<p>Cuando los semiplanos no tienen intersección común, no existe ningún punto que satisfaga todas las restricciones.</p>
+
+<p>Ejemplo:</p>
+<p>$$\\begin{aligned} \\text{Maximizar} \\quad & z = x_1 + x_2 \\\\ \\text{sujeto a} \\quad & x_1 + x_2 \\leq 2, \\\\ & x_1 + x_2 \\geq 5, \\\\ & x_1, x_2 \\geq 0. \\end{aligned}$$</p>
+
+<p>Las dos primeras restricciones definen franjas que no se solapan; la región factible es vacía.</p>
+
+<h4>Ventajas y Limitaciones</h4>
+
+<p><strong>Ventajas:</strong></p>
+<ul>
+<li>Visualización directa de la región factible y el óptimo.</li>
+<li>Comprensión intuitiva de la convexidad y de los puntos extremos.</li>
+<li>Gran valor didáctico para introducir la PL y el Simplex.</li>
+<li>Permite identificar visualmente casos especiales (múltiples óptimos, infactibilidad, no acotamiento).</li>
+</ul>
+
+<p><strong>Limitaciones:</strong></p>
+<ul>
+<li>Solo aplicable a problemas con dos variables.</li>
+<li>La precisión gráfica puede ser insuficiente para soluciones exactas.</li>
+<li>No escala a problemas reales de mayor dimensión.</li>
+</ul>`,
+            simplex: `<h3>Fundamentos del Método Simplex</h3>
+
+<h4>Introducción</h4>
+<p>El <strong>método Simplex</strong>, desarrollado por George Dantzig en 1947, es el algoritmo más utilizado para resolver problemas de PL. Su potencia radica en explorar eficientemente los vértices (o puntos extremos) de la región factible, desplazándose de un vértice a otro adyacente siempre que mejore el valor de la función objetivo.</p>
+
+<h4>Forma Estándar de un Problema de Programación Lineal</h4>
+<p>Antes de aplicar el Simplex, es necesario transformar el problema a su <strong>forma estándar</strong>. Dicha forma se caracteriza por:</p>
+<ul>
+<li>Función objetivo: maximización</li>
+<li>Todas las restricciones son igualdades lineales</li>
+<li>Todas las variables son no negativas</li>
+<li>Los términos independientes (lado derecho) son no negativos</li>
+</ul>
+
+<p>Un problema típico en forma estándar se escribe:</p>
+<p>$$\\begin{aligned} \\text{Maximizar} \\quad & z = \\mathbf{c}^T \\mathbf{x} \\\\ \\text{sujeto a} \\quad & \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\\\ & \\mathbf{x} \\geq \\mathbf{0} \\end{aligned}$$</p>
+
+<p>donde $\\mathbf{A} \\in \\mathbb{R}^{m \\times n}$ es la matriz de coeficientes, $\\mathbf{b} \\in \\mathbb{R}^m$ es el vector de recursos y $\\mathbf{c} \\in \\mathbb{R}^n$ es el vector de costos.</p>
+
+<h4>Soluciones Básicas Factibles</h4>
+<p>Una <strong>solución básica factible (SBF)</strong> se obtiene fijando $n-m$ variables en cero y resolviendo el sistema para las $m$ variables restantes, llamadas <strong>variables básicas</strong>. Las variables que valen cero se denominan <strong>variables no básicas</strong>.</p>
+
+<p>Geométricamente, cada SBF corresponde a un vértice del poliedro que define la región factible. El método Simplex se mueve de una SBF a otra adyacente (que difiere en exactamente una variable básica) mejorando sucesivamente el valor de $z$.</p>
+
+<h4>La Tabla Simplex (Tableau)</h4>
+<p>La información del problema se organiza en una <strong>tabla Simplex</strong>. El tableau inicial para un problema con $m$ restricciones y $n$ variables tiene la siguiente estructura:</p>
+
+<table style="width:100%; border-collapse:collapse; margin:10px 0; font-size:0.9em;">
+<tr style="background: var(--bg-secondary);">
+<td style="border:1px solid #ccc; padding:8px;"><strong>Base</strong></td>
+<td style="border:1px solid #ccc; padding:8px;">$x_1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$x_2$</td>
+<td style="border:1px solid #ccc; padding:8px;">$\\ldots$</td>
+<td style="border:1px solid #ccc; padding:8px;">$s_1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$\\ldots$</td>
+<td style="border:1px solid #ccc; padding:8px;"><strong>Solución</strong></td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc; padding:8px;">$z$</td>
+<td style="border:1px solid #ccc; padding:8px;">$-c_1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$-c_2$</td>
+<td style="border:1px solid #ccc; padding:8px;">$\\ldots$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$\\ldots$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+</tr>
+<tr style="border-top:2px solid #333;">
+<td style="border:1px solid #ccc; padding:8px;">$s_1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$a_{11}$</td>
+<td style="border:1px solid #ccc; padding:8px;">$a_{12}$</td>
+<td style="border:1px solid #ccc; padding:8px;">$\\ldots$</td>
+<td style="border:1px solid #ccc; padding:8px;">$1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$\\ldots$</td>
+<td style="border:1px solid #ccc; padding:8px;">$b_1$</td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc; padding:8px;">$s_2$</td>
+<td style="border:1px solid #ccc; padding:8px;">$a_{21}$</td>
+<td style="border:1px solid #ccc; padding:8px;">$a_{22}$</td>
+<td style="border:1px solid #ccc; padding:8px;">$\\ldots$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$\\ldots$</td>
+<td style="border:1px solid #ccc; padding:8px;">$b_2$</td>
+</tr>
+</table>
+
+<h4>Criterios Fundamentales del Simplex</h4>
+
+<p><strong>Criterio de optimalidad:</strong> Para un problema de maximización, si todos los coeficientes de la fila $z$ (costos reducidos) en las columnas no básicas son <strong>no negativos</strong>, la solución es <strong>óptima</strong>.</p>
+
+<p><strong>Criterio de entrada y salida:</strong></p>
+<ul>
+<li><strong>Variable de entrada:</strong> se elige la variable no básica cuyo costo reducido sea el más negativo (columna pivote)</li>
+<li><strong>Variable de salida:</strong> se calcula el cociente $\\frac{b_i}{a_{ij}}$ para coeficientes positivos en la columna pivote; la fila con el menor cociente indica la variable que sale (fila pivote)</li>
+</ul>
+
+<h4>Algoritmo Paso a Paso</h4>
+<ol>
+<li>Formular el problema en forma estándar</li>
+<li>Construir el tableau Simplex inicial</li>
+<li><strong>Prueba de optimalidad:</strong> si todos los costos reducidos $\\geq 0$, se alcanzó la solución óptima</li>
+<li>Identificar la variable de entrada (costo reducido más negativo)</li>
+<li><strong>Prueba de acotamiento:</strong> si todos los coeficientes en la columna pivote son $\\leq 0$, el problema es no acotado</li>
+<li>Calcular cocientes para determinar la variable de salida</li>
+<li>Realizar operaciones de <strong>pivoteo</strong> (operaciones elementales de fila)</li>
+<li>Volver al paso 3</li>
+</ol>
+
+<h4>Características Principales</h4>
+<ul>
+<li>Versátil para cualquier número de variables</li>
+<li>Algoritmo robusto y probado en la práctica</li>
+<li>Garantiza alcanzar el óptimo cuando existe</li>
+<li>Implementación mediante tablas es computacionalmente accesible</li>
+</ul>
+
+<h4>Consideraciones Adicionales</h4>
+
+<p><strong>Variables Artificiales:</strong> Cuando no existe una base factible evidente (en restricciones $\\geq$ o $=$), se introducen variables artificiales que se penalizan mediante el método de la <strong>Gran M</strong> o mediante el <strong>Método de Dos Fases</strong>.</p>
+
+<p><strong>Soluciones Especiales:</strong></p>
+<ul>
+<li><strong>No acotado:</strong> ningún coeficiente positivo en la columna pivote</li>
+<li><strong>Múltiples óptimos:</strong> algún costo reducido de variable no básica es cero en el óptimo</li>
+<li><strong>Degeneración:</strong> una variable básica toma valor cero; puede causar ciclaje</li>
+</ul>`,
+            granm: `<h3>Fundamentos del Método de la Gran M</h3>
+
+<h4>Introducción</h4>
+<p>En la Programación Lineal, frecuentemente aparecen restricciones de igualdad o de desigualdad del tipo $\\geq$. Estos casos no permiten obtener directamente una solución básica factible inicial añadiendo únicamente variables de holgura, porque las variables de holgura normales ($+s_i$) dan un coeficiente $+1$ pero para $\\geq$ necesitaríamos restar una variable de exceso, lo que genera una columna con $-1$, inadecuada para formar una base canónica. El <strong>método de la Gran M</strong> resuelve este inconveniente introduciendo <strong>variables artificiales</strong> y penalizándolas fuertemente en la función objetivo. Así, el Simplex forzará su eliminación de la base, devolviendo una solución factible del problema original si existe.</p>
+
+<h4>Formulación Estándar y Variables Artificiales</h4>
+<p>Para llevar un problema general a una forma que permita iniciar el Simplex con una base canónica, se realizan las siguientes transformaciones:</p>
+<ul>
+<li>Las restricciones $\\leq$ se convierten en igualdades sumando una <strong>variable de holgura</strong> $s_i \\geq 0$.</li>
+<li>Las restricciones $\\geq$ se transforman restando una <strong>variable de exceso</strong> $e_i \\geq 0$ y sumando una <strong>variable artificial</strong> $a_i \\geq 0$.</li>
+<li>Las restricciones de igualdad se dejan como están pero se añade una variable artificial $a_i \\geq 0$, ya que no se tiene una variable de holgura que proporcione un $+1$ en la base.</li>
+</ul>
+
+<p>Las variables artificiales carecen de significado físico; sólo sirven para construir una solución básica factible inicial. Para forzar que estas variables tomen valor cero en la solución óptima, se incorporan en la función objetivo con un coeficiente $-M$ (para maximización) o $+M$ (para minimización), donde $M$ simboliza un número positivo <strong>muy grande</strong>.</p>
+
+<h4>Método de la Gran M Paso a Paso</h4>
+<p>Dado el problema original en forma estándar (maximización):</p>
+<p>$$\\begin{aligned} \\text{Maximizar} \\quad & z = \\mathbf{c}^T\\mathbf{x} \\\\ \\text{sujeto a} \\quad & \\mathbf{A}\\mathbf{x} = \\mathbf{b}, \\\\ & \\mathbf{x} \\geq \\mathbf{0}. \\end{aligned}$$</p>
+
+<p>Después de introducir holguras, excesos y artificiales, la función objetivo se convierte en:</p>
+<p>$$\\text{Maximizar } z = \\mathbf{c}^T\\mathbf{x} - M\\sum_{i} a_i$$</p>
+
+<p><strong>Algoritmo adaptado:</strong></p>
+<ol>
+<li>Transformar el problema añadiendo variables de holgura, exceso y artificiales según corresponda.</li>
+<li>Formar la función objetivo penalizada con $\\mp M\\sum a_i$ (+M para minimizar, -M para maximizar).</li>
+<li>Construir el tableau inicial. Las variables básicas iniciales serán las de holgura (para $\\leq$) y las artificiales (para $\\geq$ e $=$).</li>
+<li>Aplicar el método Simplex estándar:
+<ul>
+<li>Criterio de optimalidad en maximización: la solución es óptima si todos los costos reducidos en la fila $z$ son $\\geq 0$.</li>
+<li>Para la variable de salida se usa la regla del cociente mínimo, considerando sólo coeficientes positivos en la columna pivote.</li>
+</ul>
+</li>
+<li>Interpretar la solución final:
+<ul>
+<li>Si todas las variables artificiales son no básicas (valor cero), la solución es factible y óptima para el problema original.</li>
+<li>Si alguna variable artificial permanece en la base con valor positivo, el problema original es <strong>infactible</strong>.</li>
+</ul>
+</li>
+</ol>
+
+<h4>Ejemplo Numérico Resuelto</h4>
+<p>Resolveremos el siguiente problema mediante Gran M:</p>
+<p>$$\\begin{aligned} \\text{Maximizar} \\quad & z = 3x_1 + 2x_2 \\\\ \\text{sujeto a} \\quad & 2x_1 + x_2 \\leq 18, \\\\ & 2x_1 + 3x_2 \\geq 24, \\\\ & x_1 + x_2 = 10, \\\\ & x_1, x_2 \\geq 0. \\end{aligned}$$</p>
+
+<h5><strong>Transformación a Forma Estándar</strong></h5>
+<ul>
+<li>Restricción 1 ($\\leq$): $2x_1 + x_2 + s_1 = 18$, con $s_1 \\geq 0$.</li>
+<li>Restricción 2 ($\\geq$): $2x_1 + 3x_2 - e_1 + a_1 = 24$, con $e_1, a_1 \\geq 0$.</li>
+<li>Restricción 3 ($=$): $x_1 + x_2 + a_2 = 10$, con $a_2 \\geq 0$.</li>
+</ul>
+
+<p>Función objetivo penalizada (maximización):</p>
+<p>$$\\text{Maximizar } z = 3x_1 + 2x_2 - M a_1 - M a_2$$</p>
+
+<h5><strong>Tableau Inicial</strong></h5>
+<p>Base inicial: $s_1$, $a_1$, $a_2$. Antes de construir la tabla, se realizan operaciones para hacer que los coeficientes de las variables básicas artificiales en la fila $z$ sean cero (formato canónico).</p>
+
+<table style="width:100%; border-collapse:collapse; margin:10px 0; font-size:0.85em;">
+<tr style="background: var(--bg-secondary);">
+<td style="border:1px solid #ccc; padding:8px;"><strong>Base</strong></td>
+<td style="border:1px solid #ccc; padding:8px;">$x_1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$x_2$</td>
+<td style="border:1px solid #ccc; padding:8px;">$s_1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$e_1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$a_1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$a_2$</td>
+<td style="border:1px solid #ccc; padding:8px;"><strong>Sol.</strong></td>
+</tr>
+<tr style="background: rgba(59, 130, 246, 0.1);">
+<td style="border:1px solid #ccc; padding:8px;">$z$</td>
+<td style="border:1px solid #ccc; padding:8px;">$-3-3M$</td>
+<td style="border:1px solid #ccc; padding:8px;">$-2-4M$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$M$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$-34M$</td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc; padding:8px;">$s_1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$2$</td>
+<td style="border:1px solid #ccc; padding:8px;">$1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$18$</td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc; padding:8px;">$a_1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$2$</td>
+<td style="border:1px solid #ccc; padding:8px;">$3$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$-1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$24$</td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc; padding:8px;">$a_2$</td>
+<td style="border:1px solid #ccc; padding:8px;">$1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$0$</td>
+<td style="border:1px solid #ccc; padding:8px;">$1$</td>
+<td style="border:1px solid #ccc; padding:8px;">$10$</td>
+</tr>
+</table>
+
+<h5><strong>Proceso Iterativo</strong></h5>
+<p>El método Simplex procede de manera estándar. En cada iteración:</p>
+<ol>
+<li>Se identifica la variable de entrada: aquella con el costo reducido más negativo (considerando que $M$ es muy grande).</li>
+<li>Se calcula la variable de salida mediante la regla del cociente mínimo.</li>
+<li>Se realizan operaciones de pivoteo para actualizar el tableau.</li>
+<li>Se repite hasta que todos los costos reducidos sean $\\geq 0$.</li>
+</ol>
+
+<h5><strong>Solución Final</strong></h5>
+<p>Después de aplicar iterativamente el algoritmo Simplex:</p>
+<p><strong>Solución óptima:</strong> $x_1 = 6$, $x_2 = 4$, con $z = 26$.</p>
+<p>Todas las variables artificiales son no básicas (cero), confirmando que la solución es factible para el problema original.</p>
+
+<h4>Casos Especiales con Gran M</h4>
+
+<p><strong>Problema Infactible:</strong> Si en la tabla óptima alguna variable artificial permanece en la base con valor positivo, entonces el problema original no tiene solución factible.</p>
+
+<p><strong>Soluciones Degeneradas:</strong> La presencia de $M$ puede ocasionar empates en la regla del cociente mínimo (degeneración). Si al llegar al óptimo una artificial es básica pero con valor cero, puede intentarse un pivote adicional para expulsarla.</p>
+
+<p><strong>Alternativa: Método de Dos Fases:</strong> El método de la Gran M puede generar inestabilidad numérica si $M$ es extremadamente grande. Como alternativa, se utiliza el método de las <strong>dos fases</strong>: Fase I minimiza la suma de variables artificiales; si el óptimo es 0, se pasa a la Fase II con la función objetivo original.</p>
+
+<h4>Características Principales</h4>
+<ul>
+<li>Maneja restricciones de igualdad ($=$) y mayor o igual ($\\geq$)</li>
+<li>Extiende el Simplex estándar de forma conceptualmente sencilla</li>
+<li>Las variables artificiales se penalizan con un coeficiente $M$ muy grande</li>
+<li>Garantiza expulsión de artificiales de la solución óptima si el problema es factible</li>
+<li>Detecta infactibilidad si artificiales permanecen básicas en el óptimo</li>
+</ul>`,
+            dosfases: `<h3>Fundamentos del Método de Dos Fases</h3>
+
+<h4>Introducción</h4>
+<p>El <strong>método de Dos Fases</strong> es una alternativa al método de la Gran M que <strong>elimina el uso de penalizaciones M</strong>. Esta técnica es preferida en implementaciones computacionales porque evita problemas numéricos asociados con números muy grandes. El método divide la solución en dos etapas bien diferenciadas: primero encuentra una solución básica factible, luego optimiza la función objetivo original.</p>
+
+<h4>Motivación y Conceptos Clave</h4>
+<p>Al igual que el método de la Gran M, el Simplex estándar requiere una base factible inicial evidente para comenzar. Con restricciones de igualdad ($=$) o mayor o igual ($\\geq$), las variables artificiales se introducen para esta base inicial. En lugar de penalizarlas en la función objetivo original, el método de Dos Fases:</p>
+<ul>
+<li>Crea una <strong>función objetivo auxiliar</strong> que minimiza la suma de variables artificiales.</li>
+<li>Ejecuta el Simplex en esta función auxiliar (Fase I).</li>
+<li>Si el mínimo es 0, todas las artificiales son 0, y se dispone de una solución factible.</li>
+<li>Luego optimiza la función original usando esa solución factible como base inicial (Fase II).</li>
+</ul>
+
+<h4>Algoritmo de Dos Fases</h4>
+
+<p><strong>Fase I: Encontrar una Solución Básica Factible</strong></p>
+<ol>
+<li>Añadir variables artificiales a las restricciones que no tengan una variable de holgura con coeficiente $+1$ (es decir, a restricciones $\\geq$ e $=$).</li>
+<li>Crear una función objetivo auxiliar: $\\text{Minimizar } w = \\sum_{i} a_i$ (suma de variables artificiales).</li>
+<li>Aplicar el Simplex a este problema auxiliar.</li>
+<li><strong>Criterio de parada de Fase I:</strong>
+<ul>
+<li>Si $w^* = 0$: Todas las artificiales son 0. Se tiene una solución básica factible para el problema original. Ir a Fase II.</li>
+<li>Si $w^* > 0$: Al menos una artificial tiene valor positivo. El problema original es <strong>infactible</strong>. Terminar.</li>
+</ul>
+</li>
+</ol>
+
+<p><strong>Fase II: Optimizar la Función Objetivo Original</strong></p>
+<ol>
+<li>Descartar la función auxiliar de Fase I.</li>
+<li>Usar la base factible de Fase I como solución básica inicial.</li>
+<li>Restaurar la función objetivo original: $\\text{Maximizar/Minimizar } z = \\mathbf{c}^T\\mathbf{x}$.</li>
+<li>Aplicar el Simplex normalmente hasta alcanzar optimalidad.</li>
+</ol>
+
+<h4>Ventajas del Método de Dos Fases</h4>
+<ul>
+<li><strong>Estabilidad numérica:</strong> No requiere un valor numérico extremadamente grande para $M$, evitando problemas de redondeo.</li>
+<li><strong>Claridad conceptual:</strong> Separación clara entre búsqueda de factibilidad y optimización.</li>
+<li><strong>Detección de infactibilidad:</strong> Si Fase I falla ($w^* > 0$), se identifica claramente que no hay solución factible.</li>
+<li><strong>Implementación computacional:</strong> Más robusto en sistemas de computadora.</li>
+<li><strong>Variables artificiales eliminadas:</strong> En Fase II, todas las variables artificiales son no básicas (se pueden ignorar).</li>
+</ul>
+
+<h4>Ejemplo Comparativo</h4>
+<p>Considérese el problema usado anteriormente en Gran M:</p>
+<p>$$\\begin{aligned} \\text{Maximizar} \\quad & z = 3x_1 + 2x_2 \\\\ \\text{sujeto a} \\quad & 2x_1 + x_2 \\leq 18, \\\\ & 2x_1 + 3x_2 \\geq 24, \\\\ & x_1 + x_2 = 10, \\\\ & x_1, x_2 \\geq 0. \\end{aligned}$$</p>
+
+<h5><strong>Fase I: Minimizar suma de artificiales</strong></h5>
+<p>Se introduce la función: $\\text{Minimizar } w = a_1 + a_2$ (variables artificiales para la restricción $\\geq$ y la igualdad).</p>
+<p>Después de aplicar Simplex a esta función auxiliar, si $w^* = 0$, se alcanzó una solución básica factible. Si $w^* > 0$, el problema original no tiene solución factible.</p>
+
+<h5><strong>Fase II: Optimizar función original</strong></h5>
+<p>Usando la base factible de Fase I, se resuelve el problema original:</p>
+<p>$$\\text{Maximizar } z = 3x_1 + 2x_2$$</p>
+<p>con las mismas restricciones. El resultado es la misma solución óptima: $x_1 = 6$, $x_2 = 4$, $z = 26$.</p>
+
+<h4>Comparación: Gran M vs. Dos Fases</h4>
+<table style="width:100%; border-collapse:collapse; margin:10px 0; font-size:0.9em;">
+<tr style="background: var(--bg-secondary);">
+<td style="border:1px solid #ccc; padding:8px;"><strong>Aspecto</strong></td>
+<td style="border:1px solid #ccc; padding:8px;"><strong>Gran M</strong></td>
+<td style="border:1px solid #ccc; padding:8px;"><strong>Dos Fases</strong></td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc; padding:8px;">Penalización</td>
+<td style="border:1px solid #ccc; padding:8px;">$-M$ en función objetivo</td>
+<td style="border:1px solid #ccc; padding:8px;">Función auxiliar separada</td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc; padding:8px;">Parámetro $M$</td>
+<td style="border:1px solid #ccc; padding:8px;">Simbólico, debe ser grande</td>
+<td style="border:1px solid #ccc; padding:8px;">No requiere $M$</td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc; padding:8px;">Estabilidad numérica</td>
+<td style="border:1px solid #ccc; padding:8px;">Puede haber errores de redondeo</td>
+<td style="border:1px solid #ccc; padding:8px;">Más estable</td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc; padding:8px;">Número de iteraciones</td>
+<td style="border:1px solid #ccc; padding:8px;">Generalmente menos iteraciones</td>
+<td style="border:1px solid #ccc; padding:8px;">Generalmente más iteraciones</td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc; padding:8px;">Uso computacional</td>
+<td style="border:1px solid #ccc; padding:8px;">Menos usado</td>
+<td style="border:1px solid #ccc; padding:8px;">Estándar en software</td>
+</tr>
+</table>
+
+<h4>Características Principales</h4>
+<ul>
+<li>Divide la resolución en dos etapas diferenciadas y claras</li>
+<li>Fase I determina factibilidad; Fase II determina optimalidad</li>
+<li>Evita el uso de constantes simbólicas muy grandes ($M$)</li>
+<li>Mejor para implementación en sistemas computacionales</li>
+<li>Detecta infactibilidad de manera directa en Fase I</li>
+<li>Todas las variables artificiales desaparecen en Fase II</li>
+</ul>`,
+            terminologia: `<h3>Términos y Definiciones de Programación Lineal</h3>
+
+<h4>Términos Fundamentales</h4>
+
+<p><strong>Función Objetivo (Z):</strong> Función que se busca optimizar (maximizar o minimizar). Representa el valor que se desea mejorar, como ganancia, costo, tiempo, distancia, etc.</p>
+
+<p><strong>Variables de Decisión:</strong> Incógnitas del problema que representan las cantidades a determinar (comúnmente denotadas como \\(x_1, x_2, \\ldots, x_n\\)). Son los valores que el algoritmo busca encontrar.</p>
+
+<p><strong>Restricciones:</strong> Limitaciones o condiciones que deben satisfacer las variables de decisión. Se expresan como desigualdades (\\(\\leq, \\geq\\)) o igualdades (\\(=\\)).</p>
+
+<p><strong>Región Factible:</strong> Conjunto de todos los puntos que satisfacen simultáneamente todas las restricciones y las condiciones de no negatividad. Geométricamente, es un poliedro convexo en el espacio de las variables.</p>
+
+<p><strong>Solución Óptima:</strong> Punto dentro de la región factible que maximiza o minimiza el valor de la función objetivo.</p>
+
+<h4>Variables Auxiliares en Métodos Avanzados</h4>
+
+<p><strong>Variables de Holgura (\\(s_i\\)):</strong> Se añaden a restricciones de tipo "menor o igual" (\\(\\leq\\)) para convertirlas en igualdades. Representan la cantidad de recurso no utilizado o el "holgura" disponible.</p>
+
+<p><strong>Variables de Exceso (\\(e_i\\)):</strong> Se restan en restricciones de tipo "mayor o igual" (\\(\\geq\\)) para convertirlas en igualdades. Representan la cantidad que la solución excede del mínimo requerido.</p>
+
+<p><strong>Variables Artificiales (\\(a_i\\)):</strong> Variables matemáticas auxiliares temporales usadas para inicializar el algoritmo Simplex en restricciones de igualdad (\\(=\\)) o exceso (\\(\\geq\\)). No tienen significado físico en el problema original.</p>
+
+<p><strong>Penalización M (Método Gran M):</strong> Un coeficiente extremadamente grande (\\(M \\to \\infty\\)) asignado a las variables artificiales en la función objetivo. Fuerza al algoritmo a expulsar estas variables de la solución óptima final.</p>
+
+<h4>Conceptos Clave del Algoritmo Simplex</h4>
+
+<p><strong>Solución Básica:</strong> Solución obtenida al fijar un número específico de variables en cero y resolver el sistema resultante. En un problema con \\(n\\) variables y \\(m\\) restricciones, una solución básica tiene \\(m\\) variables básicas y \\(n-m\\) variables no básicas.</p>
+
+<p><strong>Solución Básica Factible (SBF):</strong> Una solución básica donde todas las variables son no negativas.</p>
+
+<p><strong>Base:</strong> Conjunto de variables básicas que forman una matriz invertible en el tableau Simplex.</p>
+
+<p><strong>Costos Reducidos:</strong> En el tableau Simplex, los coeficientes de las variables no básicas en la fila de la función objetivo. Indican cuánto cambiaría el valor de la función objetivo si una variable no básica entrara a la base.</p>
+
+<p><strong>Pivoteo:</strong> Operación elemental de fila que cambia la base introduciendo una variable y expulsando otra, mejorando el valor de la función objetivo.`,
+            acerca: `<h3>Acerca de Simplex PL</h3>
+
+<h4>Características Principales</h4>
+
+<ul>
+<li><strong>Múltiples Métodos:</strong> Soporte para Método Gráfico (2 variables), Simplex Estándar, Método de la Gran M, y Método de Dos Fases.</li>
+<li><strong>Visualización Gráfica:</strong> Gráficos interactivos que permiten ver la región factible y el punto óptimo de forma visual.</li>
+<li><strong>Análisis Paso a Paso:</strong> Visualización completa del algoritmo Simplex con tableaus iterativos, mostrando cada pivoteo.</li>
+<li><strong>Análisis de Sensibilidad:</strong> Estudio de cómo cambia la solución óptima ante variaciones en los parámetros del problema.</li>
+<li><strong>Secciones Teóricas Editables:</strong> Cada método incluye contenido teórico completo y editable por administradores, con soporte para ecuaciones LaTeX.</li>
+<li><strong>Interfaz Responsive:</strong> Diseño adaptable que funciona en dispositivos de escritorio, tablet y móvil.</li>
+<li><strong>Modo Claro/Oscuro:</strong> Tema adaptable según preferencia del usuario para una mejor experiencia visual.</li>
+</ul>
+
+<h4>Métodos de Resolución</h4>
+
+<p><strong>Método Gráfico:</strong> Aplicable a problemas con 2 variables. Permite visualizar la región factible como un polígono y encontrar el óptimo en los vértices.</p>
+
+<p><strong>Método Simplex:</strong> Algoritmo fundamental para resolver problemas de programación lineal con múltiples variables. Itera por soluciones básicas factibles mejorando la función objetivo hasta alcanzar la optimalidad.</p>
+
+<p><strong>Método de la Gran M:</strong> Extensión del Simplex para problemas con restricciones de igualdad (=) o mayor-igual (≥). Utiliza variables artificiales penalizadas con una constante M muy grande.</p>
+
+<p><strong>Método de Dos Fases:</strong> Alternativa al Método de la Gran M que evita el manejo de constantes simbólicas. Divide la resolución en dos etapas: primero busca factibilidad, luego optimiza la función objetivo.</p>
+
+<h4>Terminología</h4>
+
+<p>La aplicación incluye una sección de Terminología con definiciones completas de todos los conceptos utilizados en los métodos de programación lineal, facilitando el aprendizaje y la comprensión de los algoritmos.</p>
+
+<h4>Tecnología</h4>
+
+<p><strong>Stack Tecnológico:</strong></p>
+<ul>
+<li><strong>Frontend:</strong> HTML5, CSS3 (Tailwind CSS), JavaScript moderno</li>
+<li><strong>Backend Python:</strong> Pyodide para ejecutar Python directamente en el navegador</li>
+<li><strong>Ecuaciones:</strong> KaTeX para renderizado de ecuaciones LaTeX</li>
+<li><strong>Gráficos:</strong> Canvas HTML5 para visualización interactiva</li>
+</ul>
+
+<p>Toda la computación ocurre en el navegador del usuario, sin necesidad de conexión a un servidor después de la carga inicial, asegurando privacidad y rapidez de ejecución.`
+        };
+
+        // Estado de edición
+        let isAdminMode = false;
+        let editingMethod = null;
+
+        // Inicializar teoría al cargar página
+        function initializeTheories() {
+            // Limpiar localStorage para forzar recarga de contenido actualizado
+            ['grafico', 'simplex', 'granm', 'dosfases', 'terminologia', 'acerca'].forEach(method => {
+                localStorage.removeItem(`teoria_${method}`);
+            });
+            
+            ['grafico', 'simplex', 'granm', 'dosfases', 'terminologia', 'acerca'].forEach(method => {
+                loadAndDisplayTheory(method);
+            });
+            checkAdminStatus();
+        }
+
+        // Cargar y mostrar teoría
+        function loadAndDisplayTheory(method) {
+            const storageKey = `teoria_${method}`;
+            let content = localStorage.getItem(storageKey);
+            
+            if (!content) {
+                content = defaultTheories[method];
+                localStorage.setItem(storageKey, content);
+            }
+            
+            const contentDiv = document.getElementById(`teoria-${method}-content`);
+            if (contentDiv) {
+                contentDiv.innerHTML = content;
+                // Procesar ecuaciones LaTeX con KaTeX
+                renderMathInElement(contentDiv, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\[', right: '\\]', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                    ]
+                });
+            }
+        }
+
+        // Toggle modo edición
+        function toggleEditMode(method, event) {
+            if (event) event.stopPropagation();
+            if (!isAdminMode) {
+                alert('Acceso denegado: Solo administrador puede editar.');
+                return;
+            }
+            
+            const viewDiv = document.getElementById(`teoria-${method}-content`);
+            const editDiv = document.getElementById(`teoria-${method}-edit`);
+            const icon = document.getElementById(`teoria-${method}-icon`);
+            const textarea = document.getElementById(`teoria-${method}-textarea`);
+            
+            if (editDiv.classList.contains('hidden')) {
+                // Entrar modo edición
+                const currentContent = localStorage.getItem(`teoria_${method}`) || defaultTheories[method];
+                textarea.value = currentContent;
+                viewDiv.classList.add('hidden');
+                editDiv.classList.remove('hidden');
+                icon.classList.add('hidden');
+            } else {
+                // Salir modo edición
+                viewDiv.classList.remove('hidden');
+                editDiv.classList.add('hidden');
+                icon.classList.remove('hidden');
+            }
+        }
+
+        // Guardar teoría
+        function saveTeoria(method) {
+            const textarea = document.getElementById(`teoria-${method}-textarea`);
+            const content = textarea.value;
+            
+            if (!content.trim()) {
+                alert('El contenido no puede estar vacío.');
+                return;
+            }
+            
+            localStorage.setItem(`teoria_${method}`, content);
+            loadAndDisplayTheory(method);
+            
+            // Salir modo edición
+            document.getElementById(`teoria-${method}-content`).classList.remove('hidden');
+            document.getElementById(`teoria-${method}-edit`).classList.add('hidden');
+            document.getElementById(`teoria-${method}-icon`).classList.remove('hidden');
+            
+            alert('✅ Contenido guardado exitosamente.');
+        }
+
+        // Toggle colapsar/expandir teoría
+        function toggleTeoria(method) {
+            const content = document.getElementById(`teoria-${method}-content`);
+            const icon = document.getElementById(`teoria-${method}-icon`);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.textContent = '▼';
+            } else {
+                content.classList.add('hidden');
+                icon.textContent = '▶';
+            }
+        }
+
+        // Verificar estado admin (usa contrasena simple almacenada en localStorage)
+        function checkAdminStatus() {
+            const adminKey = localStorage.getItem('admin_session');
+            if (adminKey === 'true') {
+                isAdminMode = true;
+                showAdminButtons();
+            }
+        }
+
+        // Mostrar botones de editar solo si es admin
+        function showAdminButtons() {
+            ['grafico', 'simplex', 'granm', 'dosfases', 'acerca'].forEach(method => {
+                const btn = document.getElementById(`edit-btn-${method}`);
+                if (btn) btn.style.display = 'block';
+            });
+        }
+
+        // Toggle modo admin (activado con contraseña)
+        function toggleAdminMode() {
+            if (isAdminMode) {
+                isAdminMode = false;
+                localStorage.removeItem('admin_session');
+                ['grafico', 'simplex', 'granm', 'dosfases'].forEach(method => {
+                    const btn = document.getElementById(`edit-btn-${method}`);
+                    if (btn) btn.style.display = 'none';
+                });
+                alert('Modo administrador desactivado.');
+            } else {
+                const password = prompt('Ingrese contraseña de administrador:');
+                if (password === 'admin123') {  // Cambia esta contraseña por la que desees
+                    isAdminMode = true;
+                    localStorage.setItem('admin_session', 'true');
+                    showAdminButtons();
+                    alert('✅ Modo administrador activado.');
+                } else if (password !== null) {
+                    alert('❌ Contraseña incorrecta.');
+                }
+            }
+        }
+
+        // Resetear todas las teorías a valores por defecto
+        function resetAllTheories() {
+            if (!confirm('¿Estás seguro de que deseas resetear TODAS las teorías al contenido por defecto?')) {
+                return;
+            }
+            ['grafico', 'simplex', 'granm', 'dosfases'].forEach(method => {
+                localStorage.removeItem(`teoria_${method}`);
+                loadAndDisplayTheory(method);
+            });
+            alert('✅ Todas las teorías han sido reseteadas.');
+        }
 
         window.addEventListener('resize', () => { if (currentGraphData) drawGraphInteractive(currentGraphData); });
         
         // Inicializar campos dinámicos de restricciones al cargar la página
         document.addEventListener('DOMContentLoaded', () => {
+            initializeTheories();
             if (document.getElementById('graph-constraints-count')) {
                 updateGraphConstraintFields();
             }
