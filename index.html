@@ -3040,11 +3040,7 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
 
         // Inicializar teoría al cargar página
         function initializeTheories() {
-            // Limpiar localStorage para forzar recarga de contenido actualizado
-            ['grafico', 'simplex', 'granm', 'dosfases', 'terminologia', 'acerca'].forEach(method => {
-                localStorage.removeItem(`teoria_${method}`);
-            });
-            
+            // Cargar teorías desde localStorage (si existen) o desde defaultTheories
             ['grafico', 'simplex', 'granm', 'dosfases', 'terminologia', 'acerca'].forEach(method => {
                 loadAndDisplayTheory(method);
             });
