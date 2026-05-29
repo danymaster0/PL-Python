@@ -4,21 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Calculadora interactiva de Programación Lineal con múltiples métodos de resolución.">
+    <meta http-equiv="Content-Encoding" content="gzip">
     <title>Simplex PL - Calculadora de Programación Lineal</title>
     
     <!-- Preconnect a CDNs para mejorar velocidad -->
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net/pyodide">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com" defer></script>
     
-    <!-- KaTeX para renderizado de ecuaciones -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <!-- KaTeX para renderizado de ecuaciones - Lazy load -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" defer></script>
     
-    <!-- Pyodide (Python en el navegador) - Cargado de forma lazy en initPyodide() -->
+    <!-- Pyodide JavaScript Runtime -->
+    <script async src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -612,7 +616,10 @@
         </div>
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <span>Cargando Python (Pyodide)...</span>
+            <span id="loading-text">Cargando Python (Pyodide)...</span>
+            <div id="progress-bar-container" style="width: 80%; max-width: 300px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 10px; overflow: hidden;">
+                <div id="progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #60a5fa, #3b82f6); transition: width 0.3s ease;"></div>
+            </div>
         </div>
     </div>
 
@@ -1120,6 +1127,51 @@ x1 + x2 = 10</textarea>
     </div>
 
     <script>
+        // ==================== OPTIMIZACIONES DE CARGA ====================
+        
+        // IndexedDB para cacheo agresivo de Pyodide
+        const PYODIDE_VERSION = 'v0.24.1-slim';
+        async function initIndexedDB() {
+            return new Promise((resolve) => {
+                const request = indexedDB.open('PyodideCache', 1);
+                request.onerror = () => resolve(null);
+                request.onsuccess = () => resolve(request.result);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('files')) {
+                        db.createObjectStore('files', { keyPath: 'url' });
+                    }
+                };
+            });
+        }
+        
+        // Usar requestIdleCallback para tareas no críticas
+        function deferTask(callback) {
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(callback);
+            } else {
+                setTimeout(callback, 0);
+            }
+        }
+        
+        // Precargar solo recursos críticos
+        function preloadCriticalResources() {
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.href = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/slim/pyodide.asm.wasm';
+            link.as = 'fetch';
+            link.crossOrigin = 'anonymous';
+            document.head.appendChild(link);
+        }
+        
+        // Ejecutar preload de recursos críticos después de que DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', preloadCriticalResources);
+        } else {
+            deferTask(preloadCriticalResources);
+        }
+        
+        // ==================== VARIABLES PRINCIPALES ====================
         let pyodide = null;
         let graphPoints = [];
         let optimalPoint = null;
@@ -1128,11 +1180,18 @@ x1 + x2 = 10</textarea>
 
         async function initPyodide() {
             try {
-                pyodide = await loadPyodide();
-                await pyodide.loadPackage(['numpy']);
+                updateProgress(60, 'Compilando intérprete Python...');
+                
+                // Usar la función global que ya cargó el script
+                if (!window.loadPyodide) {
+                    throw new Error('loadPyodide no está definido');
+                }
+                
+                pyodide = await window.loadPyodide();
+                updateProgress(75, 'Configurando módulos...');
                 
                 await pyodide.runPythonAsync(`
-import numpy as np
+# numpy se cargará bajo demanda cuando sea necesario
 import re
 import json
 
@@ -1576,26 +1635,227 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
 
 // Cargar Pyodide de forma lazy cuando el usuario lo necesite
         let pyodideInitialized = false;
+        let numpyLoaded = false;
+        
+        // Registrar Service Worker para cacheo de Pyodide
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open('pyodide-v0.24.1').then(cache => {
+    return cache.addAll([
+      'https://cdn.jsdelivr.net/pyodide/v0.24.1/slim/pyodide.js',
+      'https://cdn.jsdelivr.net/pyodide/v0.24.1/slim/pyodide.asm.js',
+      'https://cdn.jsdelivr.net/pyodide/v0.24.1/slim/pyodide.asm.wasm'
+    ]).catch(() => console.log('Cacheo de Pyodide iniciado'));
+  }));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('fetch', event => {
+  if (event.request.url.includes('cdn.jsdelivr.net/pyodide')) {
+    event.respondWith(
+      caches.match(event.request).then(response => {
+        return response || fetch(event.request).then(response => {
+          return caches.open('pyodide-v0.24.1').then(cache => {
+            cache.put(event.request, response.clone());
+            return response;
+          });
+        });
+      })
+    );
+  }
+});
+`)).catch(e => console.log('Service Worker no disponible'));
+        }
+        
+        // Actualizar barra de progreso
+        function updateProgress(percent, text) {
+            const bar = document.getElementById('progress-bar');
+            const textEl = document.getElementById('loading-text');
+            if (bar) bar.style.width = percent + '%';
+            if (textEl) textEl.textContent = text;
+        }
+        
+        // Cargar numpy bajo demanda
+        async function ensureNumpy() {
+            if (numpyLoaded || !pyodide) return;
+            try {
+                updateProgress(85, 'Cargando numpy...');
+                await pyodide.loadPackage(['numpy']);
+                
+                // Redefinir las funciones que necesitan numpy
+                await pyodide.runPythonAsync(`
+import numpy as np
+
+def ejecutar_simplex(funcion, matriz, terminos, tipo, signos, fase=None):
+    funcion, matriz, terminos = np.array(funcion, dtype=float), np.array(matriz, dtype=float), np.array(terminos, dtype=float)
+    filas, columnas = matriz.shape
+    tabla = np.zeros((filas+1, columnas+filas+1))
+    tabla[:filas, :columnas] = matriz
+    for i in range(filas):
+        tabla[i, columnas+i] = 1.0 if signos[i] == '<=' else -1.0
+        tabla[i, -1] = terminos[i]
+    tabla[-1, :columnas] = -funcion if tipo == 'max' else funcion
+    
+    iteraciones = []
+    var_basicas = [f"s{i+1}" for i in range(filas)]
+    var_no_basicas = [f"x{i+1}" for i in range(len(funcion))]
+    
+    iteraciones.append({
+        'num': 0,
+        'titulo': 'Tabla Inicial',
+        'entra': None,
+        'sale': None,
+        'pivote': None,
+        'tabla': np.round(tabla, 4).tolist(),
+        'base': var_basicas[:],
+        'fase': fase
+    })
+    
+    for it in range(100):
+        col = int(np.argmin(tabla[-1, :-1])) if tipo == 'max' else int(np.argmax(tabla[-1, :-1]))
+        if (tipo == 'max' and tabla[-1, col] >= -1e-10) or (tipo == 'min' and tabla[-1, col] <= 1e-10): break
+        cocientes = [tabla[i, -1]/tabla[i, col] if tabla[i, col] > 1e-10 else float('inf') for i in range(filas)]
+        if all(c == float('inf') for c in cocientes): return {'error': 'Problema no acotado'}
+        fila = int(np.argmin(cocientes))
+        
+        var_entra = var_no_basicas[col] if col < len(var_no_basicas) else f"x{col+1}"
+        var_sale = var_basicas[fila]
+        pivote = tabla[fila, col]
+        
+        tabla[fila] /= tabla[fila, col]
+        for i in range(filas+1):
+            if i != fila: tabla[i] -= tabla[i, col] * tabla[fila]
+        
+        var_basicas[fila] = var_entra
+        
+        iteraciones.append({
+            'num': it + 1,
+            'titulo': f'Entra {var_entra}, Sale {var_sale}',
+            'entra': var_entra,
+            'sale': var_sale,
+            'pivote': f"{pivote:.4f}",
+            'tabla': np.round(tabla, 4).tolist(),
+            'base': var_basicas[:],
+            'fase': fase
+        })
+    
+    resultado = np.zeros(columnas)
+    for j in range(columnas):
+        col = tabla[:filas, j]
+        idx = -1
+        for i in range(filas):
+            if abs(col[i] - 1) < 1e-10 and idx == -1: idx = i
+            elif abs(col[i]) > 1e-10: idx = -1; break
+        if idx != -1: resultado[j] = max(0, tabla[idx, -1])
+    
+    valor = np.dot(funcion, resultado)
+    return {'resultado': np.round(resultado, 8).tolist(), 'valor': round(valor if tipo == 'max' else -valor, 8), 'tabla': np.round(tabla, 4).tolist(), 'iteraciones': len(iteraciones)-1, 'todas_iteraciones': iteraciones}
+
+def resolver_simplex_full(tipo, func_obj, restr_str):
+    all_vars = list(dict.fromkeys(re.findall(r'([a-z]\\d*)', (func_obj + ' ' + restr_str).lower(), re.IGNORECASE)))
+    if not all_vars: return {'error': 'No se encontraron variables.'}
+    coef = parsear_funcion_objetivo(func_obj, all_vars)
+    matriz, terminos, signos = [], [], []
+    for linea in restr_str.split('\\n'):
+        linea = linea.strip()
+        if not linea or re.match(r'^[a-z]\\d*\\s*>=\\s*0$', linea.replace(' ', '').lower()): continue
+        parsed = parsear_restriccion(linea, all_vars)
+        if parsed:
+            while len(parsed['coef']) < len(all_vars): parsed['coef'].append(0.0)
+            matriz.append(parsed['coef'])
+            terminos.append(parsed['rhs'])
+            signos.append(parsed['op'])
+    if not matriz: return {'error': 'No hay restricciones válidas.'}
+    res = ejecutar_simplex(coef, matriz, terminos, tipo, signos)
+    if 'error' not in res: res['variables'] = all_vars
+    return res
+
+def resolver_dos_fases(tipo, func_obj, restr_str):
+    return resolver_simplex_full(tipo, func_obj, restr_str)
+`);
+                numpyLoaded = true;
+                updateProgress(95, 'Optimizaciones cargadas');
+            } catch (e) {
+                console.log('Error al cargar numpy:', e);
+                numpyLoaded = true; // Marcar como cargado incluso si falla para no reintentar
+            }
+        }
+        
         async function ensurePyodide() {
             if (pyodideInitialized) return;
-            if (!window.pyodideScript) {
-                window.pyodideScript = document.createElement('script');
-                window.pyodideScript.src = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
-                document.head.appendChild(window.pyodideScript);
-                await new Promise(resolve => window.pyodideScript.onload = resolve);
+            
+            try {
+                updateProgress(20, 'Cargando Pyodide...');
+                
+                // Esperar a que el script de Pyodide se cargue (con defer en head)
+                let attempts = 0;
+                while (!window.loadPyodide && attempts < 120) {
+                    await new Promise(r => setTimeout(r, 250));
+                    attempts++;
+                }
+                
+                if (!window.loadPyodide) {
+                    throw new Error('loadPyodide no está definido después de esperar');
+                }
+                
+                updateProgress(50, 'Inicializando Python...');
+                pyodideInitialized = true;
+                await initPyodide();
+                updateProgress(100, 'Python cargado');
+                setTimeout(() => {
+                    const loader = document.querySelector('.loading-screen');
+                    if (loader) loader.style.display = 'none';
+                }, 500);
+            } catch (error) {
+                console.error('Error al cargar Pyodide:', error);
+                updateProgress(100, `Error: ${error.message}`);
             }
-            pyodideInitialized = true;
-            await initPyodide();
         }
         
         // Inicializar Pyodide en background (no bloquea UI)
         window.addEventListener('load', () => {
-            setTimeout(() => {
-                if (!pyodideInitialized && !window.pyodideLoading) {
-                    window.pyodideLoading = true;
-                    ensurePyodide().catch(e => console.log('Pyodide cargar cuando sea necesario'));
+            // Usar requestIdleCallback para no interferir con otras tareas
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(() => {
+                    if (!pyodideInitialized && !window.pyodideLoading) {
+                        window.pyodideLoading = true;
+                        ensurePyodide().catch(e => console.log('Pyodide cargar cuando sea necesario'));
+                    }
+                }, { timeout: 3000 });
+            } else {
+                setTimeout(() => {
+                    if (!pyodideInitialized && !window.pyodideLoading) {
+                        window.pyodideLoading = true;
+                        ensurePyodide().catch(e => console.log('Pyodide cargar cuando sea necesario'));
+                    }
+                }, 2000);
+            }
+        });
+        
+        // Limpiar cache de IndexedDB antiguo cada 30 días
+        deferTask(() => {
+            const db = initIndexedDB();
+            db.then(database => {
+                if (database) {
+                    const tx = database.transaction('files', 'readonly');
+                    const store = tx.objectStore('files');
+                    store.getAll().onsuccess = (event) => {
+                        const now = Date.now();
+                        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+                        event.target.result.forEach(file => {
+                            if (now - file.timestamp > thirtyDaysMs) {
+                                const tx2 = database.transaction('files', 'readwrite');
+                                tx2.objectStore('files').delete(file.url);
+                            }
+                        });
+                    };
                 }
-            }, 2000);
+            });
         });
 
 // Función para actualizar colores de montañas en dashboard
@@ -1642,6 +1902,36 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
             document.querySelectorAll('nav button').forEach(b => b.classList.remove('bg-white/20'));
             document.getElementById('nav-' + page)?.classList.add('bg-white/20');
             document.getElementById('dashboard-bg').style.display = page === 'dashboard' ? 'block' : 'none';
+        }
+        
+        // ==================== LAZY LOADING CON INTERSECTION OBSERVER ====================
+        // Inicializar Intersection Observer para lazy load de secciones
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const section = entry.target;
+                        // Decodificar y renderizar contenido cuando está visible
+                        if (section.dataset.lazy) {
+                            try {
+                                const content = atob(section.dataset.lazy);
+                                section.innerHTML = content;
+                                delete section.dataset.lazy;
+                            } catch (e) {
+                                console.log('Error decodificando contenido lazy');
+                            }
+                        }
+                        observer.unobserve(section);
+                    }
+                });
+            }, { rootMargin: '50px' });
+            
+            // Aplicar observer a secciones grandes
+            deferTask(() => {
+                document.querySelectorAll('[data-lazy-section]').forEach(section => {
+                    imageObserver.observe(section);
+                });
+            });
         }
 
         const graphicalExamples = [
@@ -1703,6 +1993,18 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
             syncGraphConstraintsValue();
         }
 
+        // Helper para asegurar que Pyodide y numpy están listos
+        async function ensureSolverReady() {
+            if (!pyodideInitialized) {
+                alert('Python se está cargando. Por favor, espera...');
+                await ensurePyodide();
+            }
+            if (!numpyLoaded) {
+                await ensureNumpy();
+            }
+            return pyodide;
+        }
+        
         async function solveGraphical() {
             if (!pyodide) { alert('Python aún se está cargando.'); return; }
             const type = document.getElementById('graph-type').value;
@@ -1994,7 +2296,7 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
         }
 
         async function solveSimplex() {
-            if (!pyodide) { alert('Python aún se está cargando.'); return; }
+            await ensureSolverReady();
             const type = document.getElementById('simplex-type').value;
             const method = document.getElementById('simplex-method').value;
             const objStr = document.getElementById('simplex-objective').value;
@@ -2271,7 +2573,7 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
         }
 
         async function solveGranM() {
-            if (!pyodide) { alert('Python aún se está cargando.'); return; }
+            await ensureSolverReady();
             const type = document.getElementById('granm-type').value;
             const objStr = document.getElementById('granm-objective').value;
             const constStr = document.getElementById('granm-constraints').value.replace(/\n/g, '\\n');
@@ -2414,7 +2716,7 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
         }
 
         async function solveTwoPhase() {
-            if (!pyodide) { alert('Python aún se está cargando.'); return; }
+            await ensureSolverReady();
             const type = document.getElementById('twophase-type').value;
             const objStr = document.getElementById('twophase-objective').value;
             const constStr = document.getElementById('twophase-constraints').value.replace(/\n/g, '\\n');
@@ -3039,11 +3341,44 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
         let editingMethod = null;
 
         // Inicializar teoría al cargar página
-        function initializeTheories() {
-            // Cargar teorías desde localStorage (si existen) o desde defaultTheories
-            ['grafico', 'simplex', 'granm', 'dosfases', 'terminologia', 'acerca'].forEach(method => {
-                loadAndDisplayTheory(method);
-            });
+        async function initializeTheories() {
+            // Cargar cada teoría: primero intenta Firebase, si no existe usa localStorage
+            const methods = ['grafico', 'simplex', 'granm', 'dosfases', 'terminologia', 'acerca'];
+            
+            for (const method of methods) {
+                let content = null;
+                
+                // Intentar cargar de Firebase
+                if (window.sincronizarTeoria) {
+                    content = await window.sincronizarTeoria(method, defaultTheories[method]);
+                } else {
+                    // Si Firebase no está cargado, usar localStorage
+                    content = localStorage.getItem(`teoria_${method}`) || defaultTheories[method];
+                    localStorage.setItem(`teoria_${method}`, content);
+                }
+                
+                // Mostrar el contenido
+                const contentDiv = document.getElementById(`teoria-${method}-content`);
+                if (contentDiv) {
+                    contentDiv.innerHTML = content;
+                    // Renderizar ecuaciones LaTeX si KaTeX está disponible
+                    if (typeof renderMathInElement !== 'undefined') {
+                        try {
+                            renderMathInElement(contentDiv, {
+                                delimiters: [
+                                    {left: '$$', right: '$$', display: true},
+                                    {left: '$', right: '$', display: false},
+                                    {left: '\\[', right: '\\]', display: true},
+                                    {left: '\\(', right: '\\)', display: false}
+                                ]
+                            });
+                        } catch (e) {
+                            console.log('KaTeX no listo aún, se renderizará cuando cargue');
+                        }
+                    }
+                }
+            }
+            
             checkAdminStatus();
         }
 
@@ -3101,7 +3436,7 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
         }
 
         // Guardar teoría
-        function saveTeoria(method) {
+        async function saveTeoria(method) {
             const textarea = document.getElementById(`teoria-${method}-textarea`);
             const content = textarea.value;
             
@@ -3110,7 +3445,18 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
                 return;
             }
             
+            // Guardar en localStorage (rápido)
             localStorage.setItem(`teoria_${method}`, content);
+            
+            // Guardar en Firebase (asincrónico)
+            if (window.guardarTeoriaFirebase) {
+                const saved = await window.guardarTeoriaFirebase(method, content);
+                if (!saved) {
+                    alert('⚠️ Guardado localmente, pero falló en Firebase. Verifica tu conexión.');
+                    return;
+                }
+            }
+            
             loadAndDisplayTheory(method);
             
             // Salir modo edición
@@ -3118,7 +3464,7 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
             document.getElementById(`teoria-${method}-edit`).classList.add('hidden');
             document.getElementById(`teoria-${method}-icon`).classList.remove('hidden');
             
-            alert('✅ Contenido guardado exitosamente.');
+            alert('✅ Contenido guardado en local y Firebase.');
         }
 
         // Toggle colapsar/expandir teoría
@@ -3190,8 +3536,8 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
         window.addEventListener('resize', () => { if (currentGraphData) drawGraphInteractive(currentGraphData); });
         
         // Inicializar campos dinámicos de restricciones al cargar la página
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeTheories();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initializeTheories();
             if (document.getElementById('graph-constraints-count')) {
                 updateGraphConstraintFields();
             }
@@ -3237,5 +3583,7 @@ def resolver_gran_m_full(tipo, func_obj, restr_str):
             }
         }
     </script>
+    <!-- Firebase Firestore Integration -->
+    <script type="module" src="./firebase-config.js"></script>
 </body>
 </html>
