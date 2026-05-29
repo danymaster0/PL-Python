@@ -676,8 +676,16 @@
 
         <div class="flex-1 p-4 md:p-6 overflow-auto main-content">
             <div class="flex justify-between items-center mb-6">
-                <div></div>
+                <div id="user-info" style="font-size: 12px; color: var(--text-secondary);">
+                    🔒 No autenticado
+                </div>
                 <div class="flex items-center gap-4">
+                    <button id="btn-login" onclick="loginConGoogle()" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; display: none;">
+                        🔓 Login con Google
+                    </button>
+                    <button id="btn-logout" onclick="logout()" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; display: none;">
+                        🚪 Logout
+                    </button>
                     <span class="text-sm">☀️</span>
                     <div class="toggle-switch" onclick="toggleTheme()"></div>
                     <span class="text-sm">🌙</span>
@@ -3342,26 +3350,21 @@ def resolver_dos_fases(tipo, func_obj, restr_str):
 
         // Inicializar teoría al cargar página
         async function initializeTheories() {
-            // Cargar cada teoría: primero intenta Firebase, si no existe usa localStorage
             const methods = ['grafico', 'simplex', 'granm', 'dosfases', 'terminologia', 'acerca'];
             
             for (const method of methods) {
                 let content = null;
                 
-                // Intentar cargar de Firebase
                 if (window.sincronizarTeoria) {
                     content = await window.sincronizarTeoria(method, defaultTheories[method]);
                 } else {
-                    // Si Firebase no está cargado, usar localStorage
                     content = localStorage.getItem(`teoria_${method}`) || defaultTheories[method];
                     localStorage.setItem(`teoria_${method}`, content);
                 }
                 
-                // Mostrar el contenido
                 const contentDiv = document.getElementById(`teoria-${method}-content`);
                 if (contentDiv) {
                     contentDiv.innerHTML = content;
-                    // Renderizar ecuaciones LaTeX si KaTeX está disponible
                     if (typeof renderMathInElement !== 'undefined') {
                         try {
                             renderMathInElement(contentDiv, {
@@ -3373,12 +3376,14 @@ def resolver_dos_fases(tipo, func_obj, restr_str):
                                 ]
                             });
                         } catch (e) {
-                            console.log('KaTeX no listo aún, se renderizará cuando cargue');
+                            console.log('KaTeX no listo aún');
                         }
                     }
                 }
             }
             
+            // Actualizar UI de autenticación cuando cargue
+            setTimeout(() => window.actualizarUIAutenticacion(), 500);
             checkAdminStatus();
         }
 
@@ -3437,34 +3442,21 @@ def resolver_dos_fases(tipo, func_obj, restr_str):
 
         // Guardar teoría
         async function saveTeoria(method) {
-            const textarea = document.getElementById(`teoria-${method}-textarea`);
-            const content = textarea.value;
+            const content = document.getElementById(`teoria-${method}-textarea`).value;
+            if (!content.trim()) { alert('El contenido no puede estar vacío.'); return; }
             
-            if (!content.trim()) {
-                alert('El contenido no puede estar vacío.');
-                return;
-            }
-            
-            // Guardar en localStorage (rápido)
+            // Guardar en localStorage primero
             localStorage.setItem(`teoria_${method}`, content);
             
-            // Guardar en Firebase (asincrónico)
-            if (window.guardarTeoriaFirebase) {
-                const saved = await window.guardarTeoriaFirebase(method, content);
-                if (!saved) {
-                    alert('⚠️ Guardado localmente, pero falló en Firebase. Verifica tu conexión.');
-                    return;
-                }
-            }
+            // Guardar en Firebase (con autenticación automática)
+            const saved = await guardarTeoriaFirebase(method, content);
+            if (!saved) return; // La función ya muestra alertas
             
             loadAndDisplayTheory(method);
-            
-            // Salir modo edición
             document.getElementById(`teoria-${method}-content`).classList.remove('hidden');
             document.getElementById(`teoria-${method}-edit`).classList.add('hidden');
-            document.getElementById(`teoria-${method}-icon`).classList.remove('hidden');
-            
-            alert('✅ Contenido guardado en local y Firebase.');
+            document.getElementById(`teoria-${method}-icon`)?.classList.remove('hidden');
+            alert('✅ Contenido guardado en Firebase.');
         }
 
         // Toggle colapsar/expandir teoría
@@ -3554,7 +3546,7 @@ def resolver_dos_fases(tipo, func_obj, restr_str):
         
         // Si la página ya está cargada cuando el script se ejecuta
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('DOMContentLoaded', async () => {
                 if (document.getElementById('graph-constraints-count')) {
                     updateGraphConstraintFields();
                 }
@@ -3583,7 +3575,8 @@ def resolver_dos_fases(tipo, func_obj, restr_str):
             }
         }
     </script>
-    <!-- Firebase Firestore Integration -->
+    <!-- Firebase modules -->
+    <script type="module" src="./admin-emails.js"></script>
     <script type="module" src="./firebase-config.js"></script>
 </body>
 </html>
