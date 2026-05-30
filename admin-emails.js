@@ -3,8 +3,7 @@
 
 const ADMIN_EMAILS = [
   "danymaster0@gmail.com",           // Cambia esto por TU email
-  "otro-admin@gmail.com",         // Añade más si quieres
-  "colaborador@example.com"
+  "jesusmorales.hdz.2002@gmail.com",         // Añade más si quieres
 ];
 
 // Verificar si un email es admin
